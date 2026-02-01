@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Resultados - CodeMaster</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .dashboard-header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(124, 77, 255, 0.3);
+        }
+
+        .dashboard-header h1 {
+            color: var(--secondary-color);
+            margin: 0 0 0.5rem 0;
+            font-size: 2.5rem;
+        }
+
+        .dashboard-header p {
+            color: #aaa;
+            margin: 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(124, 77, 255, 0.2);
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-color);
+            box-shadow: 0 10px 30px rgba(124, 77, 255, 0.3);
+        }
+
+        .stat-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .label {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .filters {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(124, 77, 255, 0.2);
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filters input,
+        .filters select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(124, 77, 255, 0.3);
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filters input::placeholder {
+            color: #888;
+        }
+
+        .results-table {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(124, 77, 255, 0.2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: rgba(124, 77, 255, 0.2);
+        }
+
+        th {
+            padding: 1.2rem;
+            text-align: left;
+            color: var(--secondary-color);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 1.2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ccc;
+        }
+
+        tbody tr {
+            transition: all 0.3s;
+        }
+
+        tbody tr:hover {
+            background: rgba(124, 77, 255, 0.1);
+        }
+
+        .score-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .score-excellent {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .score-good {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        .score-fair {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+
+        .score-poor {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .exam-type-badge {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .exam-programming {
+            background: rgba(124, 77, 255, 0.2);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+
+        .exam-english {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid #3b82f6;
+        }
+
+        .exam-database {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #aaa;
+            font-size: 1.2rem;
+        }
+
+        .loading i {
+            font-size: 3rem;
+            color: var(--primary-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: #aaa;
+        }
+
+        .no-results i {
+            font-size: 4rem;
+            color: rgba(124, 77, 255, 0.3);
+            margin-bottom: 1rem;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--primary-color), #6200ea);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 8px 20px rgba(124, 77, 255, 0.4);
+            margin-bottom: 2rem;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(124, 77, 255, 0.6);
+        }
+
+        .back-btn i {
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <a href="index.html" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Volver al Inicio
+        </a>
+
+        <div class="dashboard-header">
+            <h1><i class="fas fa-chart-line"></i> Dashboard de Resultados</h1>
+            <p>Visualiza todos los resultados de exámenes guardados en Supabase</p>
+        </div>
+
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+                <div class="icon">📊</div>
+                <div class="value" id="total-exams">0</div>
+                <div class="label">Total de Exámenes</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">📈</div>
+                <div class="value" id="avg-score">0%</div>
+                <div class="label">Promedio General</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">👥</div>
+                <div class="value" id="total-candidates">0</div>
+                <div class="label">Candidatos Únicos</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">🏆</div>
+                <div class="value" id="top-score">0%</div>
+                <div class="label">Mejor Puntuación</div>
+            </div>
+        </div>
+
+        <div class="filters">
+            <input type="text" id="search-name" placeholder="🔍 Buscar por nombre...">
+            <select id="filter-exam">
+                <option value="">Todos los exámenes</option>
+                <option value="programming">Programación</option>
+                <option value="english">Inglés</option>
+                <option value="database">Bases de Datos</option>
+            </select>
+            <select id="filter-score">
+                <option value="">Todas las puntuaciones</option>
+                <option value="90">90% o más</option>
+                <option value="70">70% o más</option>
+                <option value="50">50% o más</option>
+            </select>
+        </div>
+
+        <div class="results-table">
+            <div id="loading" class="loading">
+                <i class="fas fa-spinner"></i>
+                <p>Cargando resultados...</p>
+            </div>
+            <div id="no-results" class="no-results" style="display:none;">
+                <i class="fas fa-inbox"></i>
+                <p>No se encontraron resultados</p>
+            </div>
+            <table id="results-table" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Candidato</th>
+                        <th>Evaluador</th>
+                        <th>Puesto</th>
+                        <th>Examen</th>
+                        <th>Puntuación</th>
+                        <th>Correctas</th>
+                        <th>Incorrectas</th>
+                        <th>Vacías</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Supabase Configuration
+        const supabaseUrl = 'https://ojpyfjgkffmzwvukjagf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcHlmamdrZmZtend2dWtqYWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDIwMzYsImV4cCI6MjA3OTcxODAzNn0.dlVYmoMumBse_O1PLBx0FeNITqY4YktefD6l_uonSgo';
+
+        console.log('Initializing Supabase client...');
+        console.log('Supabase URL:', supabaseUrl);
+        console.log('window.supabase:', window.supabase);
+
+        if (!window.supabase) {
+            document.getElementById('loading').innerHTML = `
+                <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i>
+                <p>Error: Supabase library not loaded. Please check your internet connection.</p>
+            `;
+            throw new Error('Supabase library not loaded');
+        }
+
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        console.log('Supabase client created:', supabase);
+
+        let allResults = [];
+        let filteredResults = [];
+
+        async function loadResults() {
+            console.log('loadResults() called');
+            try {
+                console.log('Fetching from exam_results table...');
+                const { data, error } = await supabase
+                    .from('exam_results')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                console.log('Supabase response:', { data, error });
+
+                if (error) {
+                    console.error('Supabase error:', error);
+                    throw error;
+                }
+
+                allResults = data || [];
+                filteredResults = allResults;
+
+                console.log('Results loaded:', allResults.length, 'records');
+
+                updateStats();
+                renderResults();
+
+                document.getElementById('loading').style.display = 'none';
+
+                if (allResults.length === 0) {
+                    console.log('No results found, showing no-results message');
+                    document.getElementById('no-results').style.display = 'block';
+                } else {
+                    console.log('Showing results table');
+                    document.getElementById('results-table').style.display = 'table';
+                }
+            } catch (error) {
+                console.error('Error loading results:', error);
+                document.getElementById('loading').innerHTML = `
+                    <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i>
+                    <p>Error al cargar los resultados: ${error.message}</p>
+                    <p style="font-size:0.9rem; color:#888;">Verifica que la tabla 'exam_results' existe en Supabase y que las políticas RLS permiten lectura pública.</p>
+                `;
+            }
+        }
+
+        function updateStats() {
+            const totalExams = allResults.length;
+            const avgScore = totalExams > 0
+                ? Math.round(allResults.reduce((sum, r) => sum + r.score_percentage, 0) / totalExams)
+                : 0;
+            const uniqueCandidates = new Set(allResults.map(r => r.candidate_name)).size;
+            const topScore = totalExams > 0
+                ? Math.max(...allResults.map(r => r.score_percentage))
+                : 0;
+
+            document.getElementById('total-exams').textContent = totalExams;
+            document.getElementById('avg-score').textContent = avgScore + '%';
+            document.getElementById('total-candidates').textContent = uniqueCandidates;
+            document.getElementById('top-score').textContent = topScore + '%';
+        }
+
+        function renderResults() {
+            const tbody = document.getElementById('results-body');
+            tbody.innerHTML = '';
+
+            filteredResults.forEach(result => {
+                const row = document.createElement('tr');
+
+                const date = new Date(result.created_at).toLocaleString('es-ES', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                const scoreClass =
+                    result.score_percentage >= 90 ? 'score-excellent' :
+                        result.score_percentage >= 70 ? 'score-good' :
+                            result.score_percentage >= 50 ? 'score-fair' : 'score-poor';
+
+                const examClass = `exam-${result.exam_type}`;
+
+                row.innerHTML = `
+                    <td>${date}</td>
+                    <td><strong>${result.candidate_name}</strong></td>
+                    <td>${result.evaluator_name}</td>
+                    <td>${result.target_position}</td>
+                    <td><span class="exam-type-badge ${examClass}">${formatExamType(result.exam_type)}</span></td>
+                    <td><span class="score-badge ${scoreClass}">${result.score_percentage}%</span></td>
+                    <td style="color:var(--success);">${result.correct_count}</td>
+                    <td style="color:var(--error);">${result.incorrect_count}</td>
+                    <td style="color:#888;">${result.empty_count}</td>
+                `;
+
+                tbody.appendChild(row);
+            });
+        }
+
+        function formatExamType(type) {
+            const types = {
+                'programming': 'Programación',
+                'english': 'Inglés',
+                'database': 'Bases de Datos'
+            };
+            return types[type] || type;
+        }
+
+        function applyFilters() {
+            const searchName = document.getElementById('search-name').value.toLowerCase();
+            const filterExam = document.getElementById('filter-exam').value;
+            const filterScore = parseInt(document.getElementById('filter-score').value) || 0;
+
+            filteredResults = allResults.filter(result => {
+                const matchesName = result.candidate_name.toLowerCase().includes(searchName) ||
+                    result.evaluator_name.toLowerCase().includes(searchName) ||
+                    result.target_position.toLowerCase().includes(searchName);
+                const matchesExam = !filterExam || result.exam_type === filterExam;
+                const matchesScore = result.score_percentage >= filterScore;
+
+                return matchesName && matchesExam && matchesScore;
+            });
+
+            renderResults();
+
+            if (filteredResults.length === 0) {
+                document.getElementById('results-table').style.display = 'none';
+                document.getElementById('no-results').style.display = 'block';
+            } else {
+                document.getElementById('results-table').style.display = 'table';
+                document.getElementById('no-results').style.display = 'none';
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('search-name').addEventListener('input', applyFilters);
+        document.getElementById('filter-exam').addEventListener('change', applyFilters);
+        document.getElementById('filter-score').addEventListener('change', applyFilters);
+
+        // Load on page load
+        loadResults();
+    </script>
+</body>
+
+</html>

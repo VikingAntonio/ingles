@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma de Aprendizaje Técnico</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">CodeMaster</div>
+    </header>
+
+    <main>
+        <!-- Home View: Subject Selection -->
+        <section id="home-view" class="view active">
+            <div class="hero">
+                <h1>Elige tu camino de aprendizaje</h1>
+                <p>Cursos interactivos y juegos para dominar la tecnología.</p>
+            </div>
+
+            <div class="cards-container">
+                <div class="card" data-subject="programming">
+                    <div class="icon"><i class="fas fa-laptop-code"></i></div>
+                    <h2>Programación</h2>
+                    <p>Domina JavaScript y la lógica de programación.</p>
+                </div>
+                <div class="card" data-subject="english">
+                    <div class="icon"><i class="fas fa-comments"></i></div>
+                    <h2>Inglés Técnico</h2>
+                    <p>Aprende el vocabulario esencial para devs.</p>
+                </div>
+                <div class="card" data-subject="database">
+                    <div class="icon"><i class="fas fa-database"></i></div>
+                    <h2>Base de Datos</h2>
+                    <p>Aprende SQL y gestión de datos.</p>
+                </div>
+                <div class="card" onclick="window.location.href='score.html'"
+                    style="cursor:pointer; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1)); border-color: #10b981;">
+                    <div class="icon" style="color:#10b981;"><i class="fas fa-chart-line"></i></div>
+                    <h2 style="color:#10b981;">Dashboard</h2>
+                    <p>Ver resultados de exámenes guardados.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Level Selection View -->
+        <section id="level-view" class="view hidden">
+            <nav class="app-nav">
+                <button id="btn-home-level">⬅ Inicio</button>
+                <div class="nav-title" id="level-subject-title">Niveles</div>
+                <div style="width: 80px;"></div> <!-- Spacer -->
+            </nav>
+            <div class="hero">
+                <h2>Selecciona un Nivel</h2>
+                <p>Supera cada nivel para desbloquear el siguiente.</p>
+            </div>
+            <div id="levels-container" class="cards-container">
+                <!-- Levels injected via JS -->
+            </div>
+        </section>
+
+        <!-- App View: Learning/Gaming Area -->
+        <section id="app-view" class="view hidden">
+            <nav class="app-nav">
+                <button id="btn-back">⬅ Inicio</button>
+                <div class="nav-title" id="current-subject-title">Materia</div>
+            </nav>
+
+            <div id="content-area" class="content-container">
+                <!-- Content injected via JS -->
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 CodeMaster Platform.</p>
+    </footer>
+
+    <!-- Level Complete Modal -->
+    <div id="level-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title">¡Nivel Completado!</h2>
+            <div class="modal-score" id="modal-score-display">0/0</div>
+            <p class="modal-msg">Has desbloqueado el siguiente desafío.</p>
+            <div class="modal-actions">
+                <button id="btn-next-level" class="modal-btn">Siguiente Nivel ➡</button>
+                <button id="btn-back-levels" class="modal-btn secondary">Volver al Menú</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Candidate Information Form Modal -->
+    <div id="candidate-modal" class="modal">
+        <div class="modal-content" style="max-width:500px;">
+            <h2 class="modal-title">Información del Candidato</h2>
+            <p style="color:#aaa; margin-bottom:2rem;">Por favor completa la siguiente información antes de comenzar el
+                examen.</p>
+
+            <form id="candidate-form" style="display:flex; flex-direction:column; gap:1.5rem;">
+                <div>
+                    <label style="display:block; color:var(--text-secondary); margin-bottom:0.5rem; font-weight:500;">
+                        <i class="fas fa-user"></i> Nombre del Candidato *
+                    </label>
+                    <input type="text" id="candidate-name" required
+                        style="width:100%; padding:1rem; background:rgba(255,255,255,0.1); border:2px solid rgba(124,77,255,0.3); border-radius:8px; color:white; font-family:'Poppins',sans-serif; font-size:1rem;"
+                        placeholder="Ej: Juan Pérez">
+                </div>
+
+                <div>
+                    <label style="display:block; color:var(--text-secondary); margin-bottom:0.5rem; font-weight:500;">
+                        <i class="fas fa-user-tie"></i> Nombre del Evaluador *
+                    </label>
+                    <input type="text" id="evaluator-name" required
+                        style="width:100%; padding:1rem; background:rgba(255,255,255,0.1); border:2px solid rgba(124,77,255,0.3); border-radius:8px; color:white; font-family:'Poppins',sans-serif; font-size:1rem;"
+                        placeholder="Ej: María García">
+                </div>
+
+                <div>
+                    <label style="display:block; color:var(--text-secondary); margin-bottom:0.5rem; font-weight:500;">
+                        <i class="fas fa-briefcase"></i> Puesto al que Aplica *
+                    </label>
+                    <input type="text" id="target-position" required
+                        style="width:100%; padding:1rem; background:rgba(255,255,255,0.1); border:2px solid rgba(124,77,255,0.3); border-radius:8px; color:white; font-family:'Poppins',sans-serif; font-size:1rem;"
+                        placeholder="Ej: Desarrollador Full Stack">
+                </div>
+
+                <div style="display:flex; gap:1rem;">
+                    <button type="submit" class="modal-btn" style="flex:1; padding:1.2rem; font-size:1.1rem;">
+                        <i class="fas fa-check"></i> Comenzar Examen
+                    </button>
+                    <button type="button" id="skip-candidate-form" class="modal-btn secondary"
+                        style="flex:1; padding:1.2rem; font-size:1.1rem;">
+                        <i class="fas fa-forward"></i> Saltar (Test)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js" onload="console.log('✅ script.js loaded by browser')"
+        onerror="console.error('❌ script.js failed to load')"></script>
+</body>
+
+</html>
