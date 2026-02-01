@@ -393,8 +393,10 @@
                 if (allResults.length === 0) {
                     console.log('No results found, showing no-results message');
                     document.getElementById('no-results').style.display = 'block';
+                    document.getElementById('results-table').style.display = 'none';
                 } else {
                     console.log('Showing results table');
+                    document.getElementById('no-results').style.display = 'none';
                     document.getElementById('results-table').style.display = 'table';
                 }
             } catch (error) {
@@ -410,11 +412,11 @@
         function updateStats() {
             const totalExams = allResults.length;
             const avgScore = totalExams > 0
-                ? Math.round(allResults.reduce((sum, r) => sum + r.score_percentage, 0) / totalExams)
+                ? Math.round(allResults.reduce((sum, r) => sum + (r.score_percentage || 0), 0) / totalExams)
                 : 0;
-            const uniqueCandidates = new Set(allResults.map(r => r.candidate_name)).size;
+            const uniqueCandidates = new Set(allResults.map(r => r.candidate_name || 'Anónimo')).size;
             const topScore = totalExams > 0
-                ? Math.max(...allResults.map(r => r.score_percentage))
+                ? Math.max(...allResults.map(r => r.score_percentage || 0))
                 : 0;
 
             document.getElementById('total-exams').textContent = totalExams;
@@ -476,11 +478,15 @@
             const filterScore = parseInt(document.getElementById('filter-score').value) || 0;
 
             filteredResults = allResults.filter(result => {
-                const matchesName = result.candidate_name.toLowerCase().includes(searchName) ||
-                    result.evaluator_name.toLowerCase().includes(searchName) ||
-                    result.target_position.toLowerCase().includes(searchName);
+                const candidateName = (result.candidate_name || '').toLowerCase();
+                const evaluatorName = (result.evaluator_name || '').toLowerCase();
+                const targetPosition = (result.target_position || '').toLowerCase();
+
+                const matchesName = candidateName.includes(searchName) ||
+                    evaluatorName.includes(searchName) ||
+                    targetPosition.includes(searchName);
                 const matchesExam = !filterExam || result.exam_type === filterExam;
-                const matchesScore = result.score_percentage >= filterScore;
+                const matchesScore = (result.score_percentage || 0) >= filterScore;
 
                 return matchesName && matchesExam && matchesScore;
             });
