@@ -976,13 +976,17 @@ async function saveExamResults(results, total) {
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcHlmamdrZmZtend2dWtqYWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDIwMzYsImV4cCI6MjA3OTcxODAzNn0.dlVYmoMumBse_O1PLBx0FeNITqY4YktefD6l_uonSgo';
     let supabase = null;
 
-    if (window.supabase) {
-        supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    try {
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+            supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        }
+    } catch (e) {
+        console.error('❌ Error initializing Supabase client:', e);
     }
 
     if (!supabase) {
         console.error('❌ Supabase client not initialized!');
-        return;
+        return false;
     }
 
     // Calculate Summary Stats
@@ -1034,7 +1038,7 @@ async function saveExamResults(results, total) {
     console.log("📤 Saving to Supabase:", record);
 
     try {
-        console.log("📤 Attempting to save to Supabase...");
+        console.log("📤 Attempting to save to Supabase...", record);
         const { data, error } = await supabase
             .from('exam_results')
             .insert([record])
@@ -1042,23 +1046,28 @@ async function saveExamResults(results, total) {
 
         if (error) {
             console.error("❌ Supabase Error:", error);
-            // alert("Error guardando resultados: " + error.message);
+            return false;
         } else {
             console.log("✅ Saved Success:", data);
+            return true;
         }
     } catch (err) {
         console.error("❌ Exception during save:", err);
-        // alert("Error inesperado: " + err.message);
+        return false;
     }
 }
 
-function handleLevelComplete(results, total) {
+async function handleLevelComplete(results, total) {
     console.log('🏁 handleLevelComplete called');
     console.log('  - results:', results);
     console.log('  - total:', total);
 
     // 1. SAVE TO DB AUTOMATICALLY
-    saveExamResults(results, total);
+    try {
+        await saveExamResults(results, total);
+    } catch (err) {
+        console.error("❌ Failed to save results:", err);
+    }
 
     // results can be Array (New) or Number/Object (Legacy)
     let correctCount = 0;
@@ -2049,33 +2058,22 @@ function setupSpeechPractice(game, container, onComplete) {
     recognition.onerror = (event) => {
         console.error("Speech Error:", event.error);
 
-        if (similarity >= 80) {
-            scoreBadge.style.borderColor = "var(--success)";
-            scoreBadge.style.color = "var(--success)";
-            feedback.textContent = "¡Excelente pronunciación! ✔";
-            feedback.className = "feedback-msg correct";
-            transcriptionBox.style.borderColor = "var(--success)";
+        if (userSpeech) {
+            userSpeech.textContent = "Error de reconocimiento: " + event.error;
+            userSpeech.style.color = "var(--error)";
+        }
 
-            setTimeout(() => {
-                if (onComplete) onComplete('correct');
-            }, 2500);
-        } else if (similarity >= 50) {
-            scoreBadge.style.borderColor = "var(--secondary-color)";
-            scoreBadge.style.color = "var(--secondary-color)";
-            feedback.textContent = "Buen intento, pero puedes mejorar.";
-            feedback.className = "feedback-msg"; // Neutral
-            transcriptionBox.style.borderColor = "var(--secondary-color)";
-            // Optional: Allow them to retry or pass with lower score
-            // For strict mode, we might wait for retry.
-            // For now, let's treat >50% as passable but incorrect for stats? 
-            // Or just incorrect. User asked for "percentage calculation".
-            // Let's NOT auto-advance on fail, let them retry.
-        } else {
-            scoreBadge.style.borderColor = "var(--error)";
-            scoreBadge.style.color = "var(--error)";
-            feedback.textContent = "Inténtalo de nuevo.";
-            feedback.className = "feedback-msg incorrect";
-            transcriptionBox.style.borderColor = "var(--error)";
+        if (micInstruction) {
+            micInstruction.textContent = "Hubo un error. Inténtalo de nuevo o continúa.";
+            micInstruction.style.color = "var(--error)";
+        }
+
+        if (btnNext) {
+            btnNext.classList.remove('hidden');
+        }
+
+        if (visualizer) {
+            visualizer.classList.remove('active');
         }
     }
 }
