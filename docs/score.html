@@ -346,65 +346,90 @@
         const supabaseUrl = 'https://ojpyfjgkffmzwvukjagf.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcHlmamdrZmZtend2dWtqYWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDIwMzYsImV4cCI6MjA3OTcxODAzNn0.dlVYmoMumBse_O1PLBx0FeNITqY4YktefD6l_uonSgo';
 
-        console.log('Initializing Supabase client...');
-        console.log('Supabase URL:', supabaseUrl);
-        console.log('window.supabase:', window.supabase);
+        console.log('Dashboard: Checking Supabase availability...');
 
-        if (!window.supabase) {
-            document.getElementById('loading').innerHTML = `
-                <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i>
-                <p>Error: Supabase library not loaded. Please check your internet connection.</p>
-            `;
-            throw new Error('Supabase library not loaded');
+        let supabase;
+        try {
+            if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+                console.error('Supabase library missing or invalid:', window.supabase);
+                document.getElementById('loading').innerHTML = `
+                    <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i>
+                    <p>Error: La librería de Supabase no se cargó correctamente.</p>
+                    <button onclick="location.reload()" class="back-btn" style="margin-top:1rem; padding:0.5rem 1rem;">Reintentar</button>
+                `;
+            } else {
+                supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                console.log('Supabase client initialized successfully');
+            }
+        } catch (e) {
+            console.error('Error during Supabase initialization:', e);
         }
-
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-        console.log('Supabase client created:', supabase);
 
         let allResults = [];
         let filteredResults = [];
 
         async function loadResults() {
-            console.log('loadResults() called');
+            console.log('loadResults() started');
+
+            const loadingDiv = document.getElementById('loading');
+
+            // Timeout to inform user if it takes too long
+            const timeoutId = setTimeout(() => {
+                if (allResults.length === 0 && loadingDiv.style.display !== 'none') {
+                    console.warn('Results fetch is taking too long...');
+                    loadingDiv.innerHTML += `
+                        <p style="font-size:0.9rem; color:#f59e0b; margin-top:1rem;">
+                            <i class="fas fa-clock"></i> La conexión está tardando más de lo habitual...
+                        </p>
+                    `;
+                }
+            }, 6000);
+
             try {
-                console.log('Fetching from exam_results table...');
+                if (!supabase) throw new Error('Supabase client not initialized');
+
+                console.log('Fetching data from "exam_results"...');
                 const { data, error } = await supabase
                     .from('exam_results')
                     .select('*')
                     .order('created_at', { ascending: false });
 
-                console.log('Supabase response:', { data, error });
+                clearTimeout(timeoutId);
+                console.log('Fetch completed. Error:', error, 'Data rows:', data ? data.length : 0);
 
                 if (error) {
-                    console.error('Supabase error:', error);
+                    console.error('Supabase query error:', error);
                     throw error;
                 }
 
                 allResults = data || [];
                 filteredResults = allResults;
 
-                console.log('Results loaded:', allResults.length, 'records');
-
+                console.log('Processing results...');
                 updateStats();
                 renderResults();
 
-                document.getElementById('loading').style.display = 'none';
+                loadingDiv.style.display = 'none';
 
                 if (allResults.length === 0) {
-                    console.log('No results found, showing no-results message');
+                    console.log('No data found in table');
                     document.getElementById('no-results').style.display = 'block';
                     document.getElementById('results-table').style.display = 'none';
                 } else {
-                    console.log('Showing results table');
+                    console.log('Displaying results table');
                     document.getElementById('no-results').style.display = 'none';
                     document.getElementById('results-table').style.display = 'table';
                 }
             } catch (error) {
-                console.error('Error loading results:', error);
-                document.getElementById('loading').innerHTML = `
+                if (typeof timeoutId !== 'undefined') clearTimeout(timeoutId);
+                console.error('Fatal error in loadResults:', error);
+                loadingDiv.innerHTML = `
                     <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i>
-                    <p>Error al cargar los resultados: ${error.message}</p>
-                    <p style="font-size:0.9rem; color:#888;">Verifica que la tabla 'exam_results' existe en Supabase y que las políticas RLS permiten lectura pública.</p>
+                    <p>Error al cargar los resultados: ${error.message || 'Error desconocido'}</p>
+                    <p style="font-size:0.9rem; color:#888; margin-top:1rem;">
+                        Asegúrate de que la tabla 'exam_results' existe y tiene permisos de lectura pública (RLS).
+                    </p>
+                    <button onclick="location.reload()" class="back-btn" style="margin-top:1rem; padding:0.5rem 1rem;">Reintentar</button>
                 `;
             }
         }
@@ -449,14 +474,14 @@
 
                 row.innerHTML = `
                     <td>${date}</td>
-                    <td><strong>${result.candidate_name}</strong></td>
-                    <td>${result.evaluator_name}</td>
-                    <td>${result.target_position}</td>
+                    <td><strong>${result.candidate_name || 'Anónimo'}</strong></td>
+                    <td>${result.evaluator_name || 'N/A'}</td>
+                    <td>${result.target_position || 'N/A'}</td>
                     <td><span class="exam-type-badge ${examClass}">${formatExamType(result.exam_type)}</span></td>
-                    <td><span class="score-badge ${scoreClass}">${result.score_percentage}%</span></td>
-                    <td style="color:var(--success);">${result.correct_count}</td>
-                    <td style="color:var(--error);">${result.incorrect_count}</td>
-                    <td style="color:#888;">${result.empty_count}</td>
+                    <td><span class="score-badge ${scoreClass}">${result.score_percentage || 0}%</span></td>
+                    <td style="color:var(--success);">${result.correct_count || 0}</td>
+                    <td style="color:var(--error);">${result.incorrect_count || 0}</td>
+                    <td style="color:#888;">${result.empty_count || 0}</td>
                 `;
 
                 tbody.appendChild(row);
@@ -469,7 +494,7 @@
                 'english': 'Inglés',
                 'database': 'Bases de Datos'
             };
-            return types[type] || type;
+            return types[type] || type || 'Desconocido';
         }
 
         function applyFilters() {
@@ -508,7 +533,9 @@
         document.getElementById('filter-score').addEventListener('change', applyFilters);
 
         // Load on page load
-        loadResults();
+        if (typeof loadResults === 'function') {
+            loadResults();
+        }
     </script>
 </body>
 

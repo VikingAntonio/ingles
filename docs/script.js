@@ -974,18 +974,20 @@ async function saveExamResults(results, total) {
     // Supabase Configuration
     const supabaseUrl = 'https://ojpyfjgkffmzwvukjagf.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcHlmamdrZmZtend2dWtqYWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDIwMzYsImV4cCI6MjA3OTcxODAzNn0.dlVYmoMumBse_O1PLBx0FeNITqY4YktefD6l_uonSgo';
-    let supabase = null;
+    let supabaseClient = null;
 
     try {
         if (window.supabase && typeof window.supabase.createClient === 'function') {
-            supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+            supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+        } else {
+            console.error('❌ Supabase library not found in window object');
         }
     } catch (e) {
         console.error('❌ Error initializing Supabase client:', e);
     }
 
-    if (!supabase) {
-        console.error('❌ Supabase client not initialized!');
+    if (!supabaseClient) {
+        console.error('❌ Supabase client could not be initialized!');
         return false;
     }
 
@@ -1038,21 +1040,21 @@ async function saveExamResults(results, total) {
     console.log("📤 Saving to Supabase:", record);
 
     try {
-        console.log("📤 Attempting to save to Supabase...", record);
-        const { data, error } = await supabase
+        console.log("📤 Attempting to save to Supabase table 'exam_results'...", record);
+        const { data, error } = await supabaseClient
             .from('exam_results')
             .insert([record])
             .select();
 
         if (error) {
-            console.error("❌ Supabase Error:", error);
+            console.error("❌ Supabase Insertion Error:", error);
             return false;
         } else {
             console.log("✅ Saved Success:", data);
             return true;
         }
     } catch (err) {
-        console.error("❌ Exception during save:", err);
+        console.error("❌ Fatal exception during save:", err);
         return false;
     }
 }
