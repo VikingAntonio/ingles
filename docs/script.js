@@ -1040,21 +1040,25 @@ async function saveExamResults(results, total) {
     }
 
     // Determine overall percentage
-    const finalScorePct = total > 0 ? Math.round(scoreSum / total) : 0;
+    // If we have an array of results, total is already results.length
+    // We want a percentage from 0 to 100.
+    // Each 'correct' counts as 1 towards the count.
+    // scoreSum is used for exercises that have partial scores (like speech).
+    // For regular exercises, 'correct' adds 100 to scoreSum.
+    const finalScorePct = total > 0 ? Math.min(100, Math.round(scoreSum / total)) : 0;
 
     console.log('  - Calculated stats:', { correct, incorrect, empty, finalScorePct, scoreSum, total });
 
     const record = {
-        candidate_name: candidateInfo.name,
-        evaluator_name: candidateInfo.evaluator,
-        target_position: candidateInfo.position,
+        candidate_name: candidateInfo.name || 'Candidato Desconocido',
+        evaluator_name: candidateInfo.evaluator || 'N/A',
+        target_position: candidateInfo.position || 'N/A',
         exam_type: currentState.subject,
         score_percentage: finalScorePct,
         correct_count: correct,
         incorrect_count: incorrect,
         empty_count: empty,
-        details: JSON.stringify(detailsJSON),
-        text: candidateInfo.name // Alias for compatibility
+        details: JSON.stringify(detailsJSON)
     };
 
     try {
@@ -2347,7 +2351,7 @@ function setupBuilder(game, container, onComplete) {
 
         let status = 'incorrect';
         if (userString === challenge.correct) status = 'correct';
-        else if (userString === "") status = 'empty';
+        else if (userString === "" || currentQuery.length === 0) status = 'empty';
 
         challengeResults.push({
             type: 'builder-sql',
@@ -2362,6 +2366,9 @@ function setupBuilder(game, container, onComplete) {
             internalCorrect++;
             feedback.textContent = "¡Consulta Correcta!";
             feedback.className = "feedback-msg correct";
+        } else if (status === 'empty') {
+            feedback.textContent = "Respuesta vacía";
+            feedback.className = "feedback-msg incorrect";
         } else {
             feedback.textContent = "Error de sintaxis o lógica";
             feedback.className = "feedback-msg incorrect";
