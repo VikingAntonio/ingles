@@ -114,6 +114,7 @@
             border-radius: 16px;
             overflow: hidden;
             border: 1px solid rgba(124, 77, 255, 0.2);
+            min-height: 200px;
         }
 
         table {
@@ -259,6 +260,19 @@
         .back-btn i {
             margin-right: 0.5rem;
         }
+
+        #debug-log {
+            background: #000;
+            color: #0f0;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
     </style>
 </head>
 
@@ -271,6 +285,14 @@
         <div class="dashboard-header">
             <h1><i class="fas fa-chart-line"></i> Dashboard de Resultados</h1>
             <p>Visualiza todos los resultados de exámenes guardados en Supabase</p>
+            <div style="margin-top: 1rem; display: flex; gap: 10px;">
+                <button onclick="location.reload()" class="back-btn" style="padding: 0.5rem 1rem; margin: 0; font-size: 0.8rem;">
+                    <i class="fas fa-sync"></i> Recargar
+                </button>
+                <button onclick="toggleDebug()" class="back-btn secondary" style="padding: 0.5rem 1rem; margin: 0; font-size: 0.8rem; background: #334155;">
+                    <i class="fas fa-bug"></i> Debug
+                </button>
+            </div>
         </div>
 
         <div class="stats-grid" id="stats-grid">
@@ -315,11 +337,13 @@
         <div class="results-table">
             <div id="loading" class="loading">
                 <i class="fas fa-spinner"></i>
-                <p>Cargando resultados...</p>
+                <p id="loading-text">Cargando resultados...</p>
+                <div id="error-display" style="color: #ef4444; margin-top: 1rem; font-size: 0.9rem;"></div>
             </div>
             <div id="no-results" class="no-results" style="display:none;">
                 <i class="fas fa-inbox"></i>
-                <p>No se encontraron resultados</p>
+                <p>No se encontraron resultados en la base de datos.</p>
+                <p style="font-size: 0.8rem; color: #888;">Si acabas de realizar un test, espera unos segundos y recarga la página.</p>
             </div>
             <table id="results-table" style="display:none;">
                 <thead>
@@ -339,6 +363,10 @@
                 </tbody>
             </table>
         </div>
+
+        <div id="debug-log">
+            <strong>Debug Log:</strong><br>
+        </div>
     </div>
 
     <script>
@@ -346,89 +374,98 @@
         const supabaseUrl = 'https://ojpyfjgkffmzwvukjagf.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcHlmamdrZmZtend2dWtqYWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDIwMzYsImV4cCI6MjA3OTcxODAzNn0.dlVYmoMumBse_O1PLBx0FeNITqY4YktefD6l_uonSgo';
 
-        console.log('Dashboard: Checking Supabase availability...');
-
-        let supabase;
-        try {
-            if (!window.supabase || typeof window.supabase.createClient !== 'function') {
-                console.error('Supabase library missing or invalid:', window.supabase);
-                document.getElementById('loading').innerHTML = `
-                    <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i>
-                    <p>Error: La librería de Supabase no se cargó correctamente.</p>
-                    <button onclick="location.reload()" class="back-btn" style="margin-top:1rem; padding:0.5rem 1rem;">Reintentar</button>
-                `;
-            } else {
-                supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-                console.log('Supabase client initialized successfully');
-            }
-        } catch (e) {
-            console.error('Error during Supabase initialization:', e);
+        const debugLog = document.getElementById('debug-log');
+        function log(msg, isError = false) {
+            console.log(msg);
+            const entry = document.createElement('div');
+            entry.style.color = isError ? '#ff4444' : '#00ff00';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            debugLog.appendChild(entry);
+            debugLog.scrollTop = debugLog.scrollHeight;
         }
 
+        function toggleDebug() {
+            debugLog.style.display = debugLog.style.display === 'block' ? 'none' : 'block';
+        }
+
+        let supabase = null;
         let allResults = [];
         let filteredResults = [];
 
-        async function loadResults() {
-            console.log('loadResults() started');
-
-            const loadingDiv = document.getElementById('loading');
-
-            // Timeout to inform user if it takes too long
-            const timeoutId = setTimeout(() => {
-                if (allResults.length === 0 && loadingDiv.style.display !== 'none') {
-                    console.warn('Results fetch is taking too long...');
-                    loadingDiv.innerHTML += `
-                        <p style="font-size:0.9rem; color:#f59e0b; margin-top:1rem;">
-                            <i class="fas fa-clock"></i> La conexión está tardando más de lo habitual...
-                        </p>
-                    `;
+        async function initSupabase() {
+            log('Iniciando Supabase...');
+            try {
+                if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+                    // Esperar un poco por si la carga del script es lenta
+                    for (let i = 0; i < 5; i++) {
+                        log(`Esperando a que la librería de Supabase cargue... (${i + 1}/5)`);
+                        await new Promise(r => setTimeout(r, 1000));
+                        if (window.supabase && typeof window.supabase.createClient === 'function') break;
+                    }
                 }
-            }, 6000);
+
+                if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+                    throw new Error('La librería de Supabase no está disponible. Verifica tu conexión a internet.');
+                }
+
+                supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                log('Cliente Supabase creado con éxito');
+                return true;
+            } catch (e) {
+                log('Error de inicialización: ' + e.message, true);
+                document.getElementById('error-display').textContent = 'Error: ' + e.message;
+                return false;
+            }
+        }
+
+        async function loadResults() {
+            log('loadResults() llamada');
+            const loadingDiv = document.getElementById('loading');
+            const errorDisplay = document.getElementById('error-display');
+            const loadingText = document.getElementById('loading-text');
+
+            if (!supabase) {
+                const ok = await initSupabase();
+                if (!ok) return;
+            }
+
+            loadingText.textContent = 'Consultando base de datos...';
 
             try {
-                if (!supabase) throw new Error('Supabase client not initialized');
-
-                console.log('Fetching data from "exam_results"...');
+                log('Enviando consulta a la tabla "exam_results"...');
                 const { data, error } = await supabase
                     .from('exam_results')
                     .select('*')
                     .order('created_at', { ascending: false });
 
-                clearTimeout(timeoutId);
-                console.log('Fetch completed. Error:', error, 'Data rows:', data ? data.length : 0);
-
                 if (error) {
-                    console.error('Supabase query error:', error);
+                    log('Error de consulta Supabase: ' + error.message, true);
                     throw error;
                 }
 
+                log('Datos recibidos. Filas: ' + (data ? data.length : 0));
                 allResults = data || [];
                 filteredResults = allResults;
 
-                console.log('Processing results...');
                 updateStats();
                 renderResults();
 
                 loadingDiv.style.display = 'none';
 
                 if (allResults.length === 0) {
-                    console.log('No data found in table');
+                    log('No hay datos en la tabla');
                     document.getElementById('no-results').style.display = 'block';
                     document.getElementById('results-table').style.display = 'none';
                 } else {
-                    console.log('Displaying results table');
+                    log('Mostrando tabla de resultados');
                     document.getElementById('no-results').style.display = 'none';
                     document.getElementById('results-table').style.display = 'table';
                 }
             } catch (error) {
-                if (typeof timeoutId !== 'undefined') clearTimeout(timeoutId);
-                console.error('Fatal error in loadResults:', error);
-                loadingDiv.innerHTML = `
-                    <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i>
-                    <p>Error al cargar los resultados: ${error.message || 'Error desconocido'}</p>
-                    <p style="font-size:0.9rem; color:#888; margin-top:1rem;">
-                        Asegúrate de que la tabla 'exam_results' existe y tiene permisos de lectura pública (RLS).
-                    </p>
+                log('Error fatal en loadResults: ' + error.message, true);
+                errorDisplay.innerHTML = `
+                    <p>No se pudieron cargar los datos.</p>
+                    <p style="font-size:0.8rem;">Detalle: ${error.message}</p>
                     <button onclick="location.reload()" class="back-btn" style="margin-top:1rem; padding:0.5rem 1rem;">Reintentar</button>
                 `;
             }
@@ -437,11 +474,11 @@
         function updateStats() {
             const totalExams = allResults.length;
             const avgScore = totalExams > 0
-                ? Math.round(allResults.reduce((sum, r) => sum + (r.score_percentage || 0), 0) / totalExams)
+                ? Math.round(allResults.reduce((sum, r) => sum + (Number(r.score_percentage) || 0), 0) / totalExams)
                 : 0;
             const uniqueCandidates = new Set(allResults.map(r => r.candidate_name || 'Anónimo')).size;
             const topScore = totalExams > 0
-                ? Math.max(...allResults.map(r => r.score_percentage || 0))
+                ? Math.max(...allResults.map(r => Number(r.score_percentage) || 0))
                 : 0;
 
             document.getElementById('total-exams').textContent = totalExams;
@@ -457,30 +494,29 @@
             filteredResults.forEach(result => {
                 const row = document.createElement('tr');
 
-                const date = new Date(result.created_at).toLocaleString('es-ES', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
+                const dateStr = result.created_at ? new Date(result.created_at).toLocaleString('es-ES', {
+                    year: 'numeric', month: 'short', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                }) : 'Sin fecha';
 
+                const score = Number(result.score_percentage) || 0;
                 const scoreClass =
-                    result.score_percentage >= 90 ? 'score-excellent' :
-                        result.score_percentage >= 70 ? 'score-good' :
-                            result.score_percentage >= 50 ? 'score-fair' : 'score-poor';
+                    score >= 90 ? 'score-excellent' :
+                        score >= 70 ? 'score-good' :
+                            score >= 50 ? 'score-fair' : 'score-poor';
 
-                const examClass = `exam-${result.exam_type}`;
+                const examType = result.exam_type || 'unknown';
+                const examClass = `exam-${examType}`;
 
                 row.innerHTML = `
-                    <td>${date}</td>
+                    <td>${dateStr}</td>
                     <td><strong>${result.candidate_name || 'Anónimo'}</strong></td>
                     <td>${result.evaluator_name || 'N/A'}</td>
                     <td>${result.target_position || 'N/A'}</td>
-                    <td><span class="exam-type-badge ${examClass}">${formatExamType(result.exam_type)}</span></td>
-                    <td><span class="score-badge ${scoreClass}">${result.score_percentage || 0}%</span></td>
-                    <td style="color:var(--success);">${result.correct_count || 0}</td>
-                    <td style="color:var(--error);">${result.incorrect_count || 0}</td>
+                    <td><span class="exam-type-badge ${examClass}">${formatExamType(examType)}</span></td>
+                    <td><span class="score-badge ${scoreClass}">${score}%</span></td>
+                    <td style="color:#10b981;">${result.correct_count || 0}</td>
+                    <td style="color:#ef4444;">${result.incorrect_count || 0}</td>
                     <td style="color:#888;">${result.empty_count || 0}</td>
                 `;
 
@@ -511,7 +547,7 @@
                     evaluatorName.includes(searchName) ||
                     targetPosition.includes(searchName);
                 const matchesExam = !filterExam || result.exam_type === filterExam;
-                const matchesScore = (result.score_percentage || 0) >= filterScore;
+                const matchesScore = (Number(result.score_percentage) || 0) >= filterScore;
 
                 return matchesName && matchesExam && matchesScore;
             });
@@ -532,10 +568,8 @@
         document.getElementById('filter-exam').addEventListener('change', applyFilters);
         document.getElementById('filter-score').addEventListener('change', applyFilters);
 
-        // Load on page load
-        if (typeof loadResults === 'function') {
-            loadResults();
-        }
+        // Iniciar carga
+        window.onload = loadResults;
     </script>
 </body>
 
