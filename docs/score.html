@@ -409,6 +409,14 @@
 
             loadingText.textContent = 'Consultando base de datos...';
 
+            // Timeout safety
+            const timeoutId = setTimeout(() => {
+                if (allResults.length === 0 && loadingDiv.style.display !== 'none') {
+                    log('La consulta está tardando mucho...', true);
+                    loadingText.innerHTML = 'La consulta está tardando más de lo esperado... <br><small>Verifica tu conexión o el estado de Supabase.</small>';
+                }
+            }, 6000);
+
             try {
                 log('Enviando consulta a la tabla "exam_results"...');
                 // Intentamos primero con created_at, luego con id, luego sin orden
@@ -438,6 +446,7 @@
                 }
 
                 log('Datos recibidos. Filas: ' + (result.data ? result.data.length : 0));
+                clearTimeout(timeoutId);
                 allResults = result.data || [];
                 filteredResults = allResults;
 
@@ -476,7 +485,14 @@
                     hour: '2-digit', minute: '2-digit'
                 }) : 'Sin fecha';
 
-                const score = Number(result.score_percentage) || 0;
+                let score = Number(result.score_percentage);
+
+                // Fallback if percentage is missing but counts exist
+                if (isNaN(score) || score === null) {
+                    const total = (result.correct_count || 0) + (result.incorrect_count || 0) + (result.empty_count || 0);
+                    score = total > 0 ? Math.round((result.correct_count / total) * 100) : 0;
+                }
+
                 const scoreClass =
                     score >= 90 ? 'score-excellent' :
                         score >= 70 ? 'score-good' :

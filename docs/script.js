@@ -929,7 +929,7 @@ function renderGame(game) {
                 // Detailed result from speech or other types
                 resultsArray.push({
                     type: ex.type,
-                    title: ex.title,
+                    title: ex.title || ex.question || 'Ejercicio',
                     ...status
                 });
             } else {
@@ -941,7 +941,7 @@ function renderGame(game) {
 
                 resultsArray.push({
                     type: ex.type,
-                    title: ex.title,
+                    title: ex.title || ex.question || 'Ejercicio',
                     status: finalStatus
                 });
             }
@@ -1012,6 +1012,7 @@ async function saveExamResults(results, total) {
 
     if (Array.isArray(results)) {
         console.log('  - Results is array, processing...');
+        total = results.length; // Use actual length as total
         results.forEach(r => {
             if (r.status === 'correct') {
                 correct++;
@@ -1064,18 +1065,27 @@ async function saveExamResults(results, total) {
             .select();
 
         if (response.error) {
-            console.warn("⚠️ Primary save failed (possibly missing 'text' column). Re-trying without alias...", response.error.message);
-            const { text, ...recordNoAlias } = record;
+            console.warn("⚠️ Primary save failed. Re-trying with name mapped to 'text' only...", response.error.message);
+            // Fallback 1: Remove custom columns, keep only what's standard in older schemas
+            const recordCompat = {
+                text: record.candidate_name,
+                exam_type: record.exam_type,
+                score_percentage: record.score_percentage,
+                correct_count: record.correct_count,
+                incorrect_count: record.incorrect_count,
+                empty_count: record.empty_count,
+                details: record.details
+            };
             response = await supabaseClient
                 .from('exam_results')
-                .insert([recordNoAlias])
+                .insert([recordCompat])
                 .select();
         }
 
         if (response.error) {
-            console.warn("⚠️ Secondary save failed. Trying with minimal columns...", response.error.message);
+            console.warn("⚠️ Secondary save failed. Trying with minimal columns (candidate_name)...", response.error.message);
             const minimalRecord = {
-                candidate_name: record.candidate_name,
+                candidate_name: record.candidate_name || record.text,
                 exam_type: record.exam_type,
                 score_percentage: record.score_percentage
             };
@@ -1103,13 +1113,6 @@ async function handleLevelComplete(results, total) {
     console.log('  - results:', results);
     console.log('  - total:', total);
 
-    // 1. SAVE TO DB AUTOMATICALLY
-    try {
-        await saveExamResults(results, total);
-    } catch (err) {
-        console.error("❌ Failed to save results:", err);
-    }
-
     // results can be Array (New) or Number/Object (Legacy)
     let correctCount = 0;
     let incorrectCount = 0;
@@ -1117,6 +1120,7 @@ async function handleLevelComplete(results, total) {
     let detailsHTML = '';
 
     if (Array.isArray(results)) {
+        total = results.length; // Ensure total matches results array
         // New Detailed Mode
         results.forEach(r => {
             if (r.status === 'correct') correctCount++;
@@ -1150,6 +1154,13 @@ async function handleLevelComplete(results, total) {
 
     if (isPass) {
         completedLevels.add(`${currentState.subject}-${courseData[currentState.subject].levels[currentState.levelIndex].id}`);
+    }
+
+    // 1. SAVE TO DB AUTOMATICALLY (Called after total is normalized)
+    try {
+        await saveExamResults(results, total);
+    } catch (err) {
+        console.error("❌ Failed to save results:", err);
     }
 
     const modal = document.getElementById('level-modal');
@@ -1258,11 +1269,12 @@ function setupMixedGame(game, container) {
             let finalStatus = status;
             if (status === true) finalStatus = 'correct';
             if (status === false) finalStatus = 'incorrect';
+            if (!finalStatus) finalStatus = 'empty';
 
             const exercise = game.exercises[currentExerciseIndex];
             resultsArray.push({
                 type: exercise.type,
-                title: exercise.title,
+                title: exercise.title || exercise.question || 'Ejercicio',
                 status: finalStatus
             });
         }
@@ -2330,17 +2342,21 @@ function setupBuilder(game, container, onComplete) {
 
     window.checkQuery = () => {
         const challenge = game.challenges[currentChallengeIndex];
-        const userString = currentQuery.join(' ');
+        const userString = currentQuery.join(' ').trim();
         const feedback = document.getElementById('builder-feedback');
 
-        const isCorrect = (userString === challenge.correct);
+        let status = 'incorrect';
+        if (userString === challenge.correct) status = 'correct';
+        else if (userString === "") status = 'empty';
 
         challengeResults.push({
             type: 'builder-sql',
             title: challenge.goal,
-            status: isCorrect ? 'correct' : 'incorrect',
-            score: isCorrect ? 100 : 0
+            status: status,
+            score: status === 'correct' ? 100 : 0
         });
+
+        const isCorrect = (status === 'correct');
 
         if (isCorrect) {
             internalCorrect++;
