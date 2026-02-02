@@ -525,8 +525,10 @@
                 let correct = result.correct_count;
                 let incorrect = result.incorrect_count;
                 let empty = result.empty_count || 0;
-                let recoveredEvaluator = result.evaluator_name || result.evaluator || null;
-                let recoveredPosition = result.target_position || result.position || null;
+
+                // Aggressive metadata recovery
+                let recoveredEvaluator = result.evaluator_name || result.evaluator || '';
+                let recoveredPosition = result.target_position || result.position || '';
 
                 if (result.details) {
                     try {
@@ -536,27 +538,34 @@
                         let exerciseResults = [];
                         if (Array.isArray(details)) {
                             exerciseResults = details;
-                        } else if (details && Array.isArray(details.results)) {
-                            exerciseResults = details.results;
-                            // Recover metadata if missing from top-level
-                            if (!recoveredEvaluator || recoveredEvaluator === 'N/A') recoveredEvaluator = details.metadata?.evaluator;
-                            if (!recoveredPosition || recoveredPosition === 'N/A') recoveredPosition = details.metadata?.position;
+                        } else if (details && typeof details === 'object') {
+                            exerciseResults = details.results || [];
+
+                            // Aggressively recover metadata from JSON blob if top-level is empty or generic 'N/A'
+                            const meta = details.metadata || {};
+                            if (!recoveredEvaluator || recoveredEvaluator === 'N/A' || recoveredEvaluator === 'null') {
+                                recoveredEvaluator = meta.evaluator || meta.evaluator_name || '';
+                            }
+                            if (!recoveredPosition || recoveredPosition === 'N/A' || recoveredPosition === 'null') {
+                                recoveredPosition = meta.position || meta.target_position || '';
+                            }
                         }
 
+                        // Recover counts if they are zero but we have a positive score or details exist
                         if ((correct === null || correct === undefined || (correct === 0 && score > 0)) && exerciseResults.length > 0) {
                             correct = exerciseResults.filter(d => d.status === 'correct').length;
-                            incorrect = exerciseResults.filter(d => d.status !== 'correct').length;
+                            incorrect = exerciseResults.filter(d => d.status === 'incorrect' || d.status === 'empty').length;
                         }
                     } catch (e) {
                         console.error("Error parsing details for recovery:", e);
                     }
                 }
 
-                // Fallbacks
+                // Final Fallbacks for display
                 correct = correct || 0;
                 incorrect = incorrect || 0;
-                recoveredEvaluator = recoveredEvaluator || 'N/A';
-                recoveredPosition = recoveredPosition || 'N/A';
+                recoveredEvaluator = recoveredEvaluator && recoveredEvaluator !== 'N/A' ? recoveredEvaluator : 'N/A';
+                recoveredPosition = recoveredPosition && recoveredPosition !== 'N/A' ? recoveredPosition : 'N/A';
 
                 const total = correct + incorrect + empty;
 
