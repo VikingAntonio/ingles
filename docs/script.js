@@ -905,11 +905,11 @@ function renderGame(game) {
     let currentExerciseIdx = 0;
 
     // Session Score
-    let stats = { correct: 0, incorrect: 0, empty: 0 };
+    let resultsArray = [];
 
     function loadExercise() {
         if (currentExerciseIdx >= exercises.length) {
-            handleLevelComplete(stats, exercises.length);
+            handleLevelComplete(resultsArray, exercises.length);
             return;
         }
 
@@ -923,15 +923,20 @@ function renderGame(game) {
 
         // Advance Handler
         const onStepComplete = (status) => {
-            // Normalize status
-            let finalStatus = status;
-            if (status === true) finalStatus = 'correct';
-            if (status === false) finalStatus = 'incorrect';
+            if (Array.isArray(status)) {
+                resultsArray = resultsArray.concat(status);
+            } else {
+                // Normalize status
+                let finalStatus = status;
+                if (status === true) finalStatus = 'correct';
+                if (status === false) finalStatus = 'incorrect';
 
-            if (finalStatus === 'correct') stats.correct++;
-            else if (finalStatus === 'incorrect') stats.incorrect++;
-            else if (finalStatus === 'empty') stats.empty++;
-            else stats.incorrect++; // Fallback
+                resultsArray.push({
+                    type: ex.type,
+                    title: ex.title,
+                    status: finalStatus
+                });
+            }
 
             currentExerciseIdx++;
             loadExercise();
@@ -1026,6 +1031,7 @@ async function saveExamResults(results, total) {
     console.log('  - Calculated stats:', { correct, incorrect, empty, finalScorePct });
 
     const record = {
+        text: candidateInfo.name, // Support for schema where 'text' is used for candidate name
         candidate_name: candidateInfo.name,
         evaluator_name: candidateInfo.evaluator,
         target_position: candidateInfo.position,
@@ -1138,6 +1144,7 @@ async function handleLevelComplete(results, total) {
         <p class="modal-msg">${isPass ? '¡Has dominado este tema!' : 'Vuelve a intentarlo para mejorar.'}</p>
         <div class="modal-actions">
            <button class="modal-btn" onclick="document.getElementById('level-modal').classList.remove('active'); goHome()">Menú Principal</button>
+           <button class="modal-btn" style="background:var(--accent-color)" onclick="window.location.href='score.html'">Ver Resultados</button>
            <button class="modal-btn secondary" onclick="location.reload()">Reiniciar</button>
         </div>
     `;
@@ -1170,7 +1177,7 @@ function generateTextDiff(target, transcript) {
 function setupMixedGame(game, container) {
     let currentExerciseIndex = 0;
     // New Score Object
-    let stats = { correct: 0, incorrect: 0, empty: 0 };
+    let resultsArray = [];
 
     container.innerHTML = `<div id="mixed-exercise-area"></div>`;
     const exerciseArea = document.getElementById('mixed-exercise-area');
@@ -1178,7 +1185,7 @@ function setupMixedGame(game, container) {
     function loadExercise() {
         // Safety check
         if (currentExerciseIndex >= game.exercises.length) {
-            handleLevelComplete(stats, game.exercises.length);
+            handleLevelComplete(resultsArray, game.exercises.length);
             return;
         }
 
@@ -1211,24 +1218,31 @@ function setupMixedGame(game, container) {
     }
 
     function handleExerciseComplete(status) {
-        // Normalizing legacy boolean returns
-        let finalStatus = status;
-        if (status === true) finalStatus = 'correct';
-        if (status === false) finalStatus = 'incorrect';
+        if (Array.isArray(status)) {
+            resultsArray = resultsArray.concat(status);
+        } else {
+            // Normalizing legacy boolean returns
+            let finalStatus = status;
+            if (status === true) finalStatus = 'correct';
+            if (status === false) finalStatus = 'incorrect';
 
-        // Update stats
-        if (finalStatus === 'correct') stats.correct++;
-        else if (finalStatus === 'incorrect') stats.incorrect++;
-        else if (finalStatus === 'empty') stats.empty++;
-        else stats.incorrect++; // Default fallback
+            const exercise = game.exercises[currentExerciseIndex];
+            resultsArray.push({
+                type: exercise.type,
+                title: exercise.title,
+                status: finalStatus
+            });
+        }
 
         const feedback = document.getElementById('exercise-feedback-overlay');
         if (feedback) {
+            // Take status of last item added
+            const lastStatus = resultsArray[resultsArray.length - 1].status;
             let msg = "";
             let cls = "";
-            if (finalStatus === 'correct') { msg = "✔ ¡Correcto!"; cls = "correct"; }
-            else if (finalStatus === 'incorrect') { msg = "✖ Incorrecto"; cls = "incorrect"; }
-            else { msg = "⚪ Saltado / Vacío"; cls = "incorrect"; } // Visual warning but allowed
+            if (lastStatus === 'correct') { msg = "✔ ¡Correcto!"; cls = "correct"; }
+            else if (lastStatus === 'incorrect') { msg = "✖ Incorrecto"; cls = "incorrect"; }
+            else { msg = "⚪ Saltado / Vacío"; cls = "incorrect"; }
 
             feedback.textContent = msg;
             feedback.className = `feedback-msg ${cls}`;
@@ -1239,7 +1253,7 @@ function setupMixedGame(game, container) {
             if (currentExerciseIndex < game.exercises.length) {
                 loadExercise();
             } else {
-                handleLevelComplete(stats, game.exercises.length);
+                handleLevelComplete(resultsArray, game.exercises.length);
             }
         }, 1500);
     }
@@ -2278,12 +2292,22 @@ function setupBuilder(game, container, onComplete) {
         document.getElementById('builder-feedback').textContent = '';
     };
 
+    // Track internal results for the detailed log
+    let challengeResults = [];
+
     window.checkQuery = () => {
         const challenge = game.challenges[currentChallengeIndex];
         const userString = currentQuery.join(' ');
         const feedback = document.getElementById('builder-feedback');
 
         const isCorrect = (userString === challenge.correct);
+
+        challengeResults.push({
+            type: 'builder-sql',
+            title: challenge.goal,
+            status: isCorrect ? 'correct' : 'incorrect',
+            score: isCorrect ? 100 : 0
+        });
 
         if (isCorrect) {
             internalCorrect++;
@@ -2299,20 +2323,10 @@ function setupBuilder(game, container, onComplete) {
             if (currentChallengeIndex < game.challenges.length) {
                 showChallenge();
             } else {
-                // Final of this builder challenge set
-                const finalResults = {
-                    correct: internalCorrect,
-                    incorrect: game.challenges.length - internalCorrect,
-                    empty: 0
-                };
-
                 if (onComplete) {
-                    // If part of a larger mixed test, send success status
-                    // but we might want to pass the count instead.
-                    // For now, let's keep it simple.
-                    onComplete(isCorrect);
+                    onComplete(challengeResults);
                 } else {
-                    handleLevelComplete(finalResults, game.challenges.length);
+                    handleLevelComplete(challengeResults, game.challenges.length);
                 }
             }
         }, 1500);

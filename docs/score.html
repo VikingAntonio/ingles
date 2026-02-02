@@ -433,10 +433,22 @@
 
             try {
                 log('Enviando consulta a la tabla "exam_results"...');
-                const { data, error } = await supabase
+                let { data, error } = await supabase
                     .from('exam_results')
                     .select('*')
                     .order('created_at', { ascending: false });
+
+                if (error) {
+                    log('Error con created_at, reintentando sin orden específico: ' + error.message);
+                    // Fallback query if created_at is missing
+                    const fallback = await supabase
+                        .from('exam_results')
+                        .select('*')
+                        .order('id', { ascending: false });
+
+                    data = fallback.data;
+                    error = fallback.error;
+                }
 
                 if (error) {
                     log('Error de consulta Supabase: ' + error.message, true);
@@ -476,7 +488,7 @@
             const avgScore = totalExams > 0
                 ? Math.round(allResults.reduce((sum, r) => sum + (Number(r.score_percentage) || 0), 0) / totalExams)
                 : 0;
-            const uniqueCandidates = new Set(allResults.map(r => r.candidate_name || 'Anónimo')).size;
+            const uniqueCandidates = new Set(allResults.map(r => r.candidate_name || r.text || 'Anónimo')).size;
             const topScore = totalExams > 0
                 ? Math.max(...allResults.map(r => Number(r.score_percentage) || 0))
                 : 0;
@@ -510,7 +522,7 @@
 
                 row.innerHTML = `
                     <td>${dateStr}</td>
-                    <td><strong>${result.candidate_name || 'Anónimo'}</strong></td>
+                    <td><strong>${result.candidate_name || result.text || 'Anónimo'}</strong></td>
                     <td>${result.evaluator_name || 'N/A'}</td>
                     <td>${result.target_position || 'N/A'}</td>
                     <td><span class="exam-type-badge ${examClass}">${formatExamType(examType)}</span></td>
@@ -539,7 +551,7 @@
             const filterScore = parseInt(document.getElementById('filter-score').value) || 0;
 
             filteredResults = allResults.filter(result => {
-                const candidateName = (result.candidate_name || '').toLowerCase();
+                const candidateName = (result.candidate_name || result.text || '').toLowerCase();
                 const evaluatorName = (result.evaluator_name || '').toLowerCase();
                 const targetPosition = (result.target_position || '').toLowerCase();
 
