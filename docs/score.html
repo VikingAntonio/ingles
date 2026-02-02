@@ -521,26 +521,42 @@
 
                 let score = (result.score_percentage !== null && result.score_percentage !== undefined) ? Number(result.score_percentage) : NaN;
 
-                // NEW: Try to recover counts from details if they are null or 0 but score > 0
+                // NEW: Try to recover counts and metadata from details if primary columns are missing
                 let correct = result.correct_count;
                 let incorrect = result.incorrect_count;
                 let empty = result.empty_count || 0;
+                let recoveredEvaluator = result.evaluator_name || result.evaluator || null;
+                let recoveredPosition = result.target_position || result.position || null;
 
-                if ((correct === null || correct === undefined || (correct === 0 && score > 0)) && result.details) {
+                if (result.details) {
                     try {
                         const details = typeof result.details === 'string' ? JSON.parse(result.details) : result.details;
+
+                        // Handle both old format (Array) and new format (Object with .results)
+                        let exerciseResults = [];
                         if (Array.isArray(details)) {
-                            correct = details.filter(d => d.status === 'correct').length;
-                            incorrect = details.filter(d => d.status !== 'correct').length;
+                            exerciseResults = details;
+                        } else if (details && Array.isArray(details.results)) {
+                            exerciseResults = details.results;
+                            // Recover metadata if missing from top-level
+                            if (!recoveredEvaluator || recoveredEvaluator === 'N/A') recoveredEvaluator = details.metadata?.evaluator;
+                            if (!recoveredPosition || recoveredPosition === 'N/A') recoveredPosition = details.metadata?.position;
+                        }
+
+                        if ((correct === null || correct === undefined || (correct === 0 && score > 0)) && exerciseResults.length > 0) {
+                            correct = exerciseResults.filter(d => d.status === 'correct').length;
+                            incorrect = exerciseResults.filter(d => d.status !== 'correct').length;
                         }
                     } catch (e) {
                         console.error("Error parsing details for recovery:", e);
                     }
                 }
 
-                // Fallbacks to 0
+                // Fallbacks
                 correct = correct || 0;
                 incorrect = incorrect || 0;
+                recoveredEvaluator = recoveredEvaluator || 'N/A';
+                recoveredPosition = recoveredPosition || 'N/A';
 
                 const total = correct + incorrect + empty;
 
@@ -573,10 +589,10 @@
                 tdCandidate.appendChild(strongCandidate);
 
                 const tdEvaluator = document.createElement('td');
-                tdEvaluator.textContent = result.evaluator_name || 'N/A';
+                tdEvaluator.textContent = recoveredEvaluator;
 
                 const tdPosition = document.createElement('td');
-                tdPosition.textContent = result.target_position || 'N/A';
+                tdPosition.textContent = recoveredPosition;
 
                 const tdExam = document.createElement('td');
                 tdExam.innerHTML = `<span class="exam-type-badge ${examClass}">${formatExamType(examType)}</span>`;
@@ -586,12 +602,12 @@
 
                 const tdCorrect = document.createElement('td');
                 tdCorrect.style.color = '#10b981';
-                tdCorrect.textContent = result.correct_count || 0;
+                tdCorrect.textContent = correct;
 
                 const tdIncorrect = document.createElement('td');
                 tdIncorrect.style.color = '#ef4444';
                 // Aggregate incorrect and empty for display since we removed the Vacías column
-                tdIncorrect.textContent = (result.incorrect_count || 0) + (result.empty_count || 0);
+                tdIncorrect.textContent = incorrect + (result.empty_count || 0);
 
                 row.appendChild(tdDate);
                 row.appendChild(tdCandidate);
