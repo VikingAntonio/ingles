@@ -295,28 +295,6 @@
             </div>
         </div>
 
-        <div class="stats-grid" id="stats-grid">
-            <div class="stat-card">
-                <div class="icon">📊</div>
-                <div class="value" id="total-exams">0</div>
-                <div class="label">Total de Exámenes</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon">📈</div>
-                <div class="value" id="avg-score">0%</div>
-                <div class="label">Promedio General</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon">👥</div>
-                <div class="value" id="total-candidates">0</div>
-                <div class="label">Candidatos Únicos</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon">🏆</div>
-                <div class="value" id="top-score">0%</div>
-                <div class="label">Mejor Puntuación</div>
-            </div>
-        </div>
 
         <div class="filters">
             <input type="text" id="search-name" placeholder="🔍 Buscar por nombre...">
@@ -433,33 +411,36 @@
 
             try {
                 log('Enviando consulta a la tabla "exam_results"...');
-                let { data, error } = await supabase
+                // Intentamos primero con created_at, luego con id, luego sin orden
+                let result = await supabase
                     .from('exam_results')
                     .select('*')
                     .order('created_at', { ascending: false });
 
-                if (error) {
-                    log('Error con created_at, reintentando sin orden específico: ' + error.message);
-                    // Fallback query if created_at is missing
-                    const fallback = await supabase
+                if (result.error) {
+                    log('Error con created_at, reintentando con id: ' + result.error.message);
+                    result = await supabase
                         .from('exam_results')
                         .select('*')
                         .order('id', { ascending: false });
-
-                    data = fallback.data;
-                    error = fallback.error;
                 }
 
-                if (error) {
-                    log('Error de consulta Supabase: ' + error.message, true);
-                    throw error;
+                if (result.error) {
+                    log('Error con id, intentando sin orden: ' + result.error.message);
+                    result = await supabase
+                        .from('exam_results')
+                        .select('*');
                 }
 
-                log('Datos recibidos. Filas: ' + (data ? data.length : 0));
-                allResults = data || [];
+                if (result.error) {
+                    log('Error de consulta Supabase final: ' + result.error.message, true);
+                    throw result.error;
+                }
+
+                log('Datos recibidos. Filas: ' + (result.data ? result.data.length : 0));
+                allResults = result.data || [];
                 filteredResults = allResults;
 
-                updateStats();
                 renderResults();
 
                 loadingDiv.style.display = 'none';
@@ -481,22 +462,6 @@
                     <button onclick="location.reload()" class="back-btn" style="margin-top:1rem; padding:0.5rem 1rem;">Reintentar</button>
                 `;
             }
-        }
-
-        function updateStats() {
-            const totalExams = allResults.length;
-            const avgScore = totalExams > 0
-                ? Math.round(allResults.reduce((sum, r) => sum + (Number(r.score_percentage) || 0), 0) / totalExams)
-                : 0;
-            const uniqueCandidates = new Set(allResults.map(r => r.candidate_name || r.text || 'Anónimo')).size;
-            const topScore = totalExams > 0
-                ? Math.max(...allResults.map(r => Number(r.score_percentage) || 0))
-                : 0;
-
-            document.getElementById('total-exams').textContent = totalExams;
-            document.getElementById('avg-score').textContent = avgScore + '%';
-            document.getElementById('total-candidates').textContent = uniqueCandidates;
-            document.getElementById('top-score').textContent = topScore + '%';
         }
 
         function renderResults() {

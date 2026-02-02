@@ -925,11 +925,19 @@ function renderGame(game) {
         const onStepComplete = (status) => {
             if (Array.isArray(status)) {
                 resultsArray = resultsArray.concat(status);
+            } else if (typeof status === 'object' && status !== null && status.status) {
+                // Detailed result from speech or other types
+                resultsArray.push({
+                    type: ex.type,
+                    title: ex.title,
+                    ...status
+                });
             } else {
-                // Normalize status
+                // Simple status (string or boolean)
                 let finalStatus = status;
                 if (status === true) finalStatus = 'correct';
                 if (status === false) finalStatus = 'incorrect';
+                if (!finalStatus) finalStatus = 'empty';
 
                 resultsArray.push({
                     type: ex.type,
@@ -963,7 +971,7 @@ function renderGame(game) {
             skipBtn.className = 'game-btn';
             skipBtn.textContent = 'Saltar Error';
             skipBtn.style.marginTop = '1rem';
-            skipBtn.onclick = () => onStepComplete('incorrect');
+            skipBtn.onclick = () => onStepComplete('empty');
             container.appendChild(skipBtn);
         }
     }
@@ -1005,33 +1013,37 @@ async function saveExamResults(results, total) {
     if (Array.isArray(results)) {
         console.log('  - Results is array, processing...');
         results.forEach(r => {
-            if (r.status === 'correct') correct++;
-            else if (r.status === 'incorrect') incorrect++;
-            else empty++;
-            scoreSum += (r.score || 0);
+            if (r.status === 'correct') {
+                correct++;
+                scoreSum += (r.score !== undefined ? r.score : 100);
+            }
+            else if (r.status === 'incorrect') {
+                incorrect++;
+            }
+            else {
+                empty++;
+            }
             detailsJSON.push(r);
         });
-    } else if (typeof results === 'object') {
+    } else if (typeof results === 'object' && results !== null) {
         console.log('  - Results is object (legacy)');
-        correct = results.correct;
-        incorrect = results.incorrect;
-        empty = results.empty;
-        // Legacy scoring doesn't have detailed score sum, assume 100/0
+        correct = results.correct || 0;
+        incorrect = results.incorrect || 0;
+        empty = results.empty || 0;
         scoreSum = (correct * 100);
     } else {
         console.log('  - Results is number (simple score)');
-        correct = results;
-        incorrect = total - results;
+        correct = Number(results) || 0;
+        incorrect = total - correct;
         scoreSum = (correct * 100);
     }
 
     // Determine overall percentage
-    const finalScorePct = Math.round(scoreSum / total);
+    const finalScorePct = total > 0 ? Math.round(scoreSum / total) : 0;
 
-    console.log('  - Calculated stats:', { correct, incorrect, empty, finalScorePct });
+    console.log('  - Calculated stats:', { correct, incorrect, empty, finalScorePct, scoreSum, total });
 
     const record = {
-        text: candidateInfo.name, // Support for schema where 'text' is used for candidate name
         candidate_name: candidateInfo.name,
         evaluator_name: candidateInfo.evaluator,
         target_position: candidateInfo.position,
@@ -1040,23 +1052,44 @@ async function saveExamResults(results, total) {
         correct_count: correct,
         incorrect_count: incorrect,
         empty_count: empty,
-        details: JSON.stringify(detailsJSON)
+        details: JSON.stringify(detailsJSON),
+        text: candidateInfo.name // Alias for compatibility
     };
 
-    console.log("📤 Saving to Supabase:", record);
-
     try {
-        console.log("📤 Attempting to save to Supabase table 'exam_results'...", record);
-        const { data, error } = await supabaseClient
+        console.log("📤 Attempting primary save to 'exam_results'...", record);
+        let response = await supabaseClient
             .from('exam_results')
             .insert([record])
             .select();
 
-        if (error) {
-            console.error("❌ Supabase Insertion Error:", error);
+        if (response.error) {
+            console.warn("⚠️ Primary save failed (possibly missing 'text' column). Re-trying without alias...", response.error.message);
+            const { text, ...recordNoAlias } = record;
+            response = await supabaseClient
+                .from('exam_results')
+                .insert([recordNoAlias])
+                .select();
+        }
+
+        if (response.error) {
+            console.warn("⚠️ Secondary save failed. Trying with minimal columns...", response.error.message);
+            const minimalRecord = {
+                candidate_name: record.candidate_name,
+                exam_type: record.exam_type,
+                score_percentage: record.score_percentage
+            };
+            response = await supabaseClient
+                .from('exam_results')
+                .insert([minimalRecord])
+                .select();
+        }
+
+        if (response.error) {
+            console.error("❌ All Supabase insertion attempts failed:", response.error);
             return false;
         } else {
-            console.log("✅ Saved Success:", data);
+            console.log("✅ Saved Success:", response.data);
             return true;
         }
     } catch (err) {
@@ -1770,13 +1803,13 @@ function setupQuizDiagram(exercise, container, onSuccess) {
                 feedback.innerHTML = "<span>✔</span> ¡Correcto!";
                 feedback.className = "feedback-msg correct";
                 btn.style.backgroundColor = 'var(--success)';
-                if (onSuccess) onSuccess(true);
+                if (onSuccess) onSuccess('correct');
             } else {
                 feedback.innerHTML = "<span>✖</span> Incorrecto";
                 feedback.className = "feedback-msg incorrect";
                 btn.style.backgroundColor = 'var(--error)';
                 btns[exercise.correct].style.backgroundColor = 'var(--success)';
-                if (onSuccess) onSuccess(false);
+                if (onSuccess) onSuccess('incorrect');
             }
         };
     });
@@ -1913,7 +1946,7 @@ function setupMatch(game, container, onComplete) {
             selectedEn = null;
             if (matches === game.pairs.length) {
                 setTimeout(() => {
-                    if (onComplete) onComplete(true);
+                    if (onComplete) onComplete('correct');
                     else handleLevelComplete(matches, game.pairs.length);
                 }, 1000);
             }
@@ -2517,7 +2550,7 @@ function setupQuizItem(exercise, container, onComplete) {
                 btns[exercise.correct].style.backgroundColor = 'var(--success)';
             }
 
-            if (onComplete) onComplete(isCorrect);
+            if (onComplete) onComplete(isCorrect ? 'correct' : 'incorrect');
         };
     });
 }
