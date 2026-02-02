@@ -983,7 +983,8 @@ function renderGame(game) {
 // --- SUPABASE SAVE FUNCTION ---
 async function saveExamResults(results, total) {
     console.log('🔵 saveExamResults called');
-    console.log('  - Current candidateInfo:', candidateInfo);
+    // Ensure candidateInfo is logged thoroughly
+    console.log('  - Current candidateInfo object:', JSON.stringify(candidateInfo, null, 2));
 
     // Supabase Configuration
     const supabaseUrl = 'https://ojpyfjgkffmzwvukjagf.supabase.co';
@@ -1138,13 +1139,14 @@ async function saveExamResults(results, total) {
 
         if (response.error) {
             console.warn("⚠️ Secondary save failed. Trying minimal columns + results counts...", response.error.message);
-            // Fallback 2: Maybe evaluator_name or target_position or details are missing
+            // Fallback 2: Keep details even if evaluator_name or target_position fail
             const recordBasic = {
                 candidate_name: record.candidate_name || (record.text ? record.text : 'Anónimo'),
                 exam_type: record.exam_type,
                 score_percentage: record.score_percentage,
                 correct_count: record.correct_count,
-                incorrect_count: record.incorrect_count
+                incorrect_count: record.incorrect_count,
+                details: record.details // IMPORTANT: Keep metadata for recovery
             };
             response = await supabaseClient
                 .from('exam_results')
@@ -1153,11 +1155,12 @@ async function saveExamResults(results, total) {
         }
 
         if (response.error) {
-            console.warn("⚠️ Tertiary save failed. Trying absolute minimal (name, exam, score)...", response.error.message);
+            console.warn("⚠️ Tertiary save failed. Trying absolute minimal with details...", response.error.message);
             const minimalRecord = {
                 candidate_name: record.candidate_name || record.text || 'Anónimo',
                 exam_type: record.exam_type,
-                score_percentage: record.score_percentage
+                score_percentage: record.score_percentage,
+                details: record.details // Final fallback to keep the JSON blob
             };
             response = await supabaseClient
                 .from('exam_results')
