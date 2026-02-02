@@ -94,7 +94,7 @@
 
         .filters input,
         .filters select {
-            background: rgba(255, 255, 255, 0.1);
+            background: #000;
             border: 1px solid rgba(124, 77, 255, 0.3);
             border-radius: 8px;
             padding: 0.8rem 1rem;
@@ -102,6 +102,11 @@
             font-family: 'Poppins', sans-serif;
             flex: 1;
             min-width: 200px;
+        }
+
+        .filters select option {
+            background: #000;
+            color: #fff;
         }
 
         .filters input::placeholder {
@@ -150,32 +155,41 @@
             background: rgba(124, 77, 255, 0.1);
         }
 
-        .score-badge {
+        .dashboard-score-badge {
             display: inline-block;
             padding: 0.5rem 1rem;
             border-radius: 20px;
             font-weight: bold;
             font-size: 1.1rem;
+            position: relative !important; /* Override style.css */
+            transform: scale(1) !important; /* Override style.css */
+            width: auto !important; /* Override style.css */
+            height: auto !important; /* Override style.css */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3) !important;
         }
 
         .score-excellent {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+            color: white !important;
+            border: none !important;
         }
 
         .score-good {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
+            background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+            color: white !important;
+            border: none !important;
         }
 
         .score-fair {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: white;
+            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+            color: white !important;
+            border: none !important;
         }
 
         .score-poor {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: white;
+            background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+            color: white !important;
+            border: none !important;
         }
 
         .exam-type-badge {
@@ -334,7 +348,6 @@
                         <th>Puntuación</th>
                         <th>Correctas</th>
                         <th>Incorrectas</th>
-                        <th>Vacías</th>
                     </tr>
                 </thead>
                 <tbody id="results-body">
@@ -506,7 +519,7 @@
                     hour: '2-digit', minute: '2-digit'
                 }) : 'Sin fecha';
 
-                let score = result.score_percentage !== null ? Number(result.score_percentage) : NaN;
+                let score = (result.score_percentage !== null && result.score_percentage !== undefined) ? Number(result.score_percentage) : NaN;
 
                 // Fallback if percentage is missing but counts exist OR if percentage is clearly wrong (>100)
                 const correct = result.correct_count || 0;
@@ -514,9 +527,12 @@
                 const empty = result.empty_count || 0;
                 const total = correct + incorrect + empty;
 
-                if (isNaN(score) || score === null || score > 100) {
+                if (isNaN(score) || score === null || score > 100 || score < 0) {
                     score = total > 0 ? Math.round((correct / total) * 100) : 0;
                 }
+
+                // Ensure score is a valid number for display
+                if (isNaN(score)) score = 0;
 
                 const scoreClass =
                     score >= 90 ? 'score-excellent' :
@@ -524,7 +540,11 @@
                             score >= 50 ? 'score-fair' : 'score-poor';
 
                 const examType = result.exam_type || 'unknown';
-                const examClass = `exam-${examType}`;
+                let examClass = 'exam-unknown';
+                const lowExam = examType.toLowerCase();
+                if (lowExam.includes('program') || lowExam.includes('code')) examClass = 'exam-programming';
+                else if (lowExam.includes('inglés') || lowExam.includes('english')) examClass = 'exam-english';
+                else if (lowExam.includes('base') || lowExam.includes('data')) examClass = 'exam-database';
 
                 // Using textContent for user-provided data to prevent XSS
                 const tdDate = document.createElement('td');
@@ -545,7 +565,7 @@
                 tdExam.innerHTML = `<span class="exam-type-badge ${examClass}">${formatExamType(examType)}</span>`;
 
                 const tdScore = document.createElement('td');
-                tdScore.innerHTML = `<span class="score-badge ${scoreClass}">${score}%</span>`;
+                tdScore.innerHTML = `<span class="dashboard-score-badge ${scoreClass}">${score}%</span>`;
 
                 const tdCorrect = document.createElement('td');
                 tdCorrect.style.color = '#10b981';
@@ -553,11 +573,8 @@
 
                 const tdIncorrect = document.createElement('td');
                 tdIncorrect.style.color = '#ef4444';
-                tdIncorrect.textContent = result.incorrect_count || 0;
-
-                const tdEmpty = document.createElement('td');
-                tdEmpty.style.color = '#888';
-                tdEmpty.textContent = result.empty_count || 0;
+                // Aggregate incorrect and empty for display since we removed the Vacías column
+                tdIncorrect.textContent = (result.incorrect_count || 0) + (result.empty_count || 0);
 
                 row.appendChild(tdDate);
                 row.appendChild(tdCandidate);
@@ -567,7 +584,6 @@
                 row.appendChild(tdScore);
                 row.appendChild(tdCorrect);
                 row.appendChild(tdIncorrect);
-                row.appendChild(tdEmpty);
 
                 tbody.appendChild(row);
             });
@@ -577,9 +593,12 @@
             const types = {
                 'programming': 'Programación',
                 'english': 'Inglés',
-                'database': 'Bases de Datos'
+                'database': 'Bases de Datos',
+                'programación': 'Programación',
+                'bases de datos': 'Bases de Datos'
             };
-            return types[type] || type || 'Desconocido';
+            const lowerType = (type || '').toLowerCase();
+            return types[lowerType] || type || 'Desconocido';
         }
 
         function applyFilters() {
