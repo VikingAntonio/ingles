@@ -521,10 +521,27 @@
 
                 let score = (result.score_percentage !== null && result.score_percentage !== undefined) ? Number(result.score_percentage) : NaN;
 
-                // Fallback if percentage is missing but counts exist OR if percentage is clearly wrong (>100)
-                const correct = result.correct_count || 0;
-                const incorrect = result.incorrect_count || 0;
-                const empty = result.empty_count || 0;
+                // NEW: Try to recover counts from details if they are null or 0 but score > 0
+                let correct = result.correct_count;
+                let incorrect = result.incorrect_count;
+                let empty = result.empty_count || 0;
+
+                if ((correct === null || correct === undefined || (correct === 0 && score > 0)) && result.details) {
+                    try {
+                        const details = typeof result.details === 'string' ? JSON.parse(result.details) : result.details;
+                        if (Array.isArray(details)) {
+                            correct = details.filter(d => d.status === 'correct').length;
+                            incorrect = details.filter(d => d.status !== 'correct').length;
+                        }
+                    } catch (e) {
+                        console.error("Error parsing details for recovery:", e);
+                    }
+                }
+
+                // Fallbacks to 0
+                correct = correct || 0;
+                incorrect = incorrect || 0;
+
                 const total = correct + incorrect + empty;
 
                 if (isNaN(score) || score === null || score > 100 || score < 0) {
