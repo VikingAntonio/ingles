@@ -983,6 +983,7 @@ function renderGame(game) {
 // --- SUPABASE SAVE FUNCTION ---
 async function saveExamResults(results, total) {
     console.log('🔵 saveExamResults called');
+    console.log('  - Current candidateInfo:', candidateInfo);
 
     // Supabase Configuration
     const supabaseUrl = 'https://ojpyfjgkffmzwvukjagf.supabase.co';
@@ -1081,6 +1082,17 @@ async function saveExamResults(results, total) {
         }
     }
 
+    // Create a structured details object for better recovery
+    const structuredDetails = {
+        metadata: {
+            candidate: candidateInfo.name || 'Anónimo',
+            evaluator: candidateInfo.evaluator || 'N/A',
+            position: candidateInfo.position || 'N/A',
+            date: new Date().toISOString()
+        },
+        results: detailsJSON
+    };
+
     const record = {
         candidate_name: candidateInfo.name || 'Candidato Desconocido',
         evaluator_name: candidateInfo.evaluator || 'N/A',
@@ -1090,7 +1102,7 @@ async function saveExamResults(results, total) {
         correct_count: correct,
         incorrect_count: incorrect,
         empty_count: 0, // Explicitly 0 as empty is merged into incorrect
-        details: JSON.stringify(detailsJSON),
+        details: JSON.stringify(structuredDetails),
         audio_url: audioUrlFound // Add new field for the database column
     };
 
