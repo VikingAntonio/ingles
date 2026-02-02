@@ -366,7 +366,7 @@
             debugLog.style.display = debugLog.style.display === 'block' ? 'none' : 'block';
         }
 
-        let supabase = null;
+        let _supabaseClient = null;
         let allResults = [];
         let filteredResults = [];
 
@@ -386,7 +386,7 @@
                     throw new Error('La librería de Supabase no está disponible. Verifica tu conexión a internet.');
                 }
 
-                supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                _supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
                 log('Cliente Supabase creado con éxito');
                 return true;
             } catch (e) {
@@ -402,32 +402,45 @@
             const errorDisplay = document.getElementById('error-display');
             const loadingText = document.getElementById('loading-text');
 
-            if (!supabase) {
+            loadingDiv.style.display = 'block';
+            errorDisplay.textContent = '';
+
+            if (!_supabaseClient) {
                 const ok = await initSupabase();
-                if (!ok) return;
+                if (!ok) {
+                    loadingDiv.style.display = 'block'; // Keep visible to show error inside it
+                    loadingText.style.display = 'none';
+                    return;
+                }
             }
 
             loadingText.textContent = 'Consultando base de datos...';
+            loadingText.style.display = 'block';
 
-            // Timeout safety
+            // Timeout safety: 10 seconds total
             const timeoutId = setTimeout(() => {
                 if (allResults.length === 0 && loadingDiv.style.display !== 'none') {
                     log('La consulta está tardando mucho...', true);
-                    loadingText.innerHTML = 'La consulta está tardando más de lo esperado... <br><small>Verifica tu conexión o el estado de Supabase.</small>';
+                    loadingText.innerHTML = `
+                        <p>La consulta está tardando más de lo esperado...</p>
+                        <button onclick="location.reload()" class="back-btn" style="margin-top:1rem; padding:0.5rem 1rem; font-size:0.8rem;">
+                            <i class="fas fa-sync"></i> Reintentar ahora
+                        </button>
+                    `;
                 }
-            }, 6000);
+            }, 8000);
 
             try {
                 log('Enviando consulta a la tabla "exam_results"...');
                 // Intentamos primero con created_at, luego con id, luego sin orden
-                let result = await supabase
+                let result = await _supabaseClient
                     .from('exam_results')
                     .select('*')
                     .order('created_at', { ascending: false });
 
                 if (result.error) {
                     log('Error con created_at, reintentando con id: ' + result.error.message);
-                    result = await supabase
+                    result = await _supabaseClient
                         .from('exam_results')
                         .select('*')
                         .order('id', { ascending: false });
@@ -435,7 +448,7 @@
 
                 if (result.error) {
                     log('Error con id, intentando sin orden: ' + result.error.message);
-                    result = await supabase
+                    result = await _supabaseClient
                         .from('exam_results')
                         .select('*');
                 }
@@ -464,11 +477,17 @@
                     document.getElementById('results-table').style.display = 'table';
                 }
             } catch (error) {
+                clearTimeout(timeoutId);
                 log('Error fatal en loadResults: ' + error.message, true);
+                loadingText.style.display = 'none';
                 errorDisplay.innerHTML = `
-                    <p>No se pudieron cargar los datos.</p>
-                    <p style="font-size:0.8rem;">Detalle: ${error.message}</p>
-                    <button onclick="location.reload()" class="back-btn" style="margin-top:1rem; padding:0.5rem 1rem;">Reintentar</button>
+                    <div style="background: rgba(239, 68, 68, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid #ef4444;">
+                        <p><strong>Error al cargar datos:</strong></p>
+                        <p style="font-size:0.8rem; margin: 0.5rem 0;">${error.message || 'Error de conexión con Supabase'}</p>
+                        <button onclick="location.reload()" class="back-btn" style="margin-top:1rem; padding:0.5rem 1rem; font-size:0.8rem; background: #ef4444;">
+                            <i class="fas fa-sync"></i> Reintentar
+                        </button>
+                    </div>
                 `;
             }
         }
@@ -476,6 +495,8 @@
         function renderResults() {
             const tbody = document.getElementById('results-body');
             tbody.innerHTML = '';
+
+            if (filteredResults.length === 0) return;
 
             filteredResults.forEach(result => {
                 const row = document.createElement('tr');
@@ -485,12 +506,16 @@
                     hour: '2-digit', minute: '2-digit'
                 }) : 'Sin fecha';
 
-                let score = Number(result.score_percentage);
+                let score = result.score_percentage !== null ? Number(result.score_percentage) : NaN;
 
-                // Fallback if percentage is missing but counts exist
-                if (isNaN(score) || score === null) {
-                    const total = (result.correct_count || 0) + (result.incorrect_count || 0) + (result.empty_count || 0);
-                    score = total > 0 ? Math.round((result.correct_count / total) * 100) : 0;
+                // Fallback if percentage is missing but counts exist OR if percentage is clearly wrong (>100)
+                const correct = result.correct_count || 0;
+                const incorrect = result.incorrect_count || 0;
+                const empty = result.empty_count || 0;
+                const total = correct + incorrect + empty;
+
+                if (isNaN(score) || score === null || score > 100) {
+                    score = total > 0 ? Math.round((correct / total) * 100) : 0;
                 }
 
                 const scoreClass =
@@ -501,17 +526,48 @@
                 const examType = result.exam_type || 'unknown';
                 const examClass = `exam-${examType}`;
 
-                row.innerHTML = `
-                    <td>${dateStr}</td>
-                    <td><strong>${result.candidate_name || result.text || 'Anónimo'}</strong></td>
-                    <td>${result.evaluator_name || 'N/A'}</td>
-                    <td>${result.target_position || 'N/A'}</td>
-                    <td><span class="exam-type-badge ${examClass}">${formatExamType(examType)}</span></td>
-                    <td><span class="score-badge ${scoreClass}">${score}%</span></td>
-                    <td style="color:#10b981;">${result.correct_count || 0}</td>
-                    <td style="color:#ef4444;">${result.incorrect_count || 0}</td>
-                    <td style="color:#888;">${result.empty_count || 0}</td>
-                `;
+                // Using textContent for user-provided data to prevent XSS
+                const tdDate = document.createElement('td');
+                tdDate.textContent = dateStr;
+
+                const tdCandidate = document.createElement('td');
+                const strongCandidate = document.createElement('strong');
+                strongCandidate.textContent = result.candidate_name || result.text || 'Anónimo';
+                tdCandidate.appendChild(strongCandidate);
+
+                const tdEvaluator = document.createElement('td');
+                tdEvaluator.textContent = result.evaluator_name || 'N/A';
+
+                const tdPosition = document.createElement('td');
+                tdPosition.textContent = result.target_position || 'N/A';
+
+                const tdExam = document.createElement('td');
+                tdExam.innerHTML = `<span class="exam-type-badge ${examClass}">${formatExamType(examType)}</span>`;
+
+                const tdScore = document.createElement('td');
+                tdScore.innerHTML = `<span class="score-badge ${scoreClass}">${score}%</span>`;
+
+                const tdCorrect = document.createElement('td');
+                tdCorrect.style.color = '#10b981';
+                tdCorrect.textContent = result.correct_count || 0;
+
+                const tdIncorrect = document.createElement('td');
+                tdIncorrect.style.color = '#ef4444';
+                tdIncorrect.textContent = result.incorrect_count || 0;
+
+                const tdEmpty = document.createElement('td');
+                tdEmpty.style.color = '#888';
+                tdEmpty.textContent = result.empty_count || 0;
+
+                row.appendChild(tdDate);
+                row.appendChild(tdCandidate);
+                row.appendChild(tdEvaluator);
+                row.appendChild(tdPosition);
+                row.appendChild(tdExam);
+                row.appendChild(tdScore);
+                row.appendChild(tdCorrect);
+                row.appendChild(tdIncorrect);
+                row.appendChild(tdEmpty);
 
                 tbody.appendChild(row);
             });
@@ -562,7 +618,11 @@
         document.getElementById('filter-score').addEventListener('change', applyFilters);
 
         // Iniciar carga
-        window.onload = loadResults;
+        if (document.readyState === 'complete') {
+            loadResults();
+        } else {
+            window.addEventListener('load', loadResults);
+        }
     </script>
 </body>
 
