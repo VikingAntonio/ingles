@@ -1103,9 +1103,13 @@ async function saveExamResults(results, total) {
 
         if (response.error) {
             console.warn("⚠️ Primary save failed. Re-trying with name mapped to 'text' only...", response.error.message);
-            // Fallback 1: Remove custom columns, keep only what's standard in older schemas
+            console.error("Failed Record attempt 1:", record);
+
+            // Fallback 1: Map candidate_name to 'text' but try to keep ALL other fields
             const recordCompat = {
                 text: record.candidate_name,
+                evaluator_name: record.evaluator_name,
+                target_position: record.target_position,
                 exam_type: record.exam_type,
                 score_percentage: record.score_percentage,
                 correct_count: record.correct_count,
@@ -1121,9 +1125,25 @@ async function saveExamResults(results, total) {
         }
 
         if (response.error) {
-            console.warn("⚠️ Secondary save failed. Trying with minimal columns (candidate_name)...", response.error.message);
+            console.warn("⚠️ Secondary save failed. Trying minimal columns + results counts...", response.error.message);
+            // Fallback 2: Maybe evaluator_name or target_position or details are missing
+            const recordBasic = {
+                candidate_name: record.candidate_name || (record.text ? record.text : 'Anónimo'),
+                exam_type: record.exam_type,
+                score_percentage: record.score_percentage,
+                correct_count: record.correct_count,
+                incorrect_count: record.incorrect_count
+            };
+            response = await supabaseClient
+                .from('exam_results')
+                .insert([recordBasic])
+                .select();
+        }
+
+        if (response.error) {
+            console.warn("⚠️ Tertiary save failed. Trying absolute minimal (name, exam, score)...", response.error.message);
             const minimalRecord = {
-                candidate_name: record.candidate_name || record.text,
+                candidate_name: record.candidate_name || record.text || 'Anónimo',
                 exam_type: record.exam_type,
                 score_percentage: record.score_percentage
             };
