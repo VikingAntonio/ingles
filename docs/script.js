@@ -1045,6 +1045,42 @@ async function saveExamResults(results, total) {
 
     console.log('  - Calculated stats:', { correct, incorrect, empty, finalScorePct, scoreSum, total });
 
+    // Handle Audio Uploads if any blobs are present
+    let audioUrlFound = null;
+    for (let r of detailsJSON) {
+        if (r.details && r.details.audioBlob) {
+            try {
+                console.log("🎙️ Attempting audio upload to Supabase Storage...");
+                const fileName = `speech_${Date.now()}_${Math.random().toString(36).substring(7)}.webm`;
+                const { data, error } = await supabaseClient
+                    .storage
+                    .from('audio-results')
+                    .upload(fileName, r.details.audioBlob, {
+                        contentType: 'audio/webm',
+                        upsert: false
+                    });
+
+                if (error) {
+                    console.warn("⚠️ Audio upload failed:", error.message);
+                } else {
+                    const { data: urlData } = supabaseClient
+                        .storage
+                        .from('audio-results')
+                        .getPublicUrl(fileName);
+
+                    const publicUrl = urlData.publicUrl;
+                    r.details.audio_url = publicUrl;
+                    audioUrlFound = publicUrl;
+                    console.log("✅ Audio uploaded successfully:", publicUrl);
+                }
+            } catch (err) {
+                console.error("❌ Audio upload exception:", err);
+            }
+            // Delete blob to prevent JSON stringify issues
+            delete r.details.audioBlob;
+        }
+    }
+
     const record = {
         candidate_name: candidateInfo.name || 'Candidato Desconocido',
         evaluator_name: candidateInfo.evaluator || 'N/A',
@@ -1054,7 +1090,8 @@ async function saveExamResults(results, total) {
         correct_count: correct,
         incorrect_count: incorrect,
         empty_count: 0, // Explicitly 0 as empty is merged into incorrect
-        details: JSON.stringify(detailsJSON)
+        details: JSON.stringify(detailsJSON),
+        audio_url: audioUrlFound // Add new field for the database column
     };
 
     try {
@@ -1074,7 +1111,8 @@ async function saveExamResults(results, total) {
                 correct_count: record.correct_count,
                 incorrect_count: record.incorrect_count,
                 empty_count: record.empty_count,
-                details: record.details
+                details: record.details,
+                audio_url: record.audio_url
             };
             response = await supabaseClient
                 .from('exam_results')
@@ -2043,11 +2081,31 @@ function setupSpeechPractice(game, container, onComplete) {
     let isRecording = false;
     let finalTranscript = '';
     let hasRecorded = false; // To prevent multiple logic runs
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let audioBlob = null;
 
     btnMic.onclick = () => {
         if (!isRecording) {
             // Start Recording
             recognition.start();
+
+            // Start Audio Recording (MediaRecorder)
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(stream => {
+                        mediaRecorder = new MediaRecorder(stream);
+                        audioChunks = [];
+                        mediaRecorder.ondataavailable = event => {
+                            audioChunks.push(event.data);
+                        };
+                        mediaRecorder.onstop = () => {
+                            audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        };
+                        mediaRecorder.start();
+                    }).catch(err => console.error("MediaRecorder Error:", err));
+            }
+
             isRecording = true;
             hasRecorded = false;
 
@@ -2073,6 +2131,12 @@ function setupSpeechPractice(game, container, onComplete) {
         } else {
             // Stop Recording
             recognition.stop();
+
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+
             isRecording = false;
 
             btnMic.classList.remove('recording');
@@ -2096,10 +2160,14 @@ function setupSpeechPractice(game, container, onComplete) {
         const status = similarity >= 60 ? 'correct' : 'incorrect';
 
         onComplete({
+            type: 'speech-practice',
             status: status,
             score: similarity,
-            transcript: finalTranscript,
-            target: targetText
+            details: {
+                transcript: finalTranscript,
+                target: targetText,
+                audioBlob: audioBlob // Store blob to upload later
+            }
         });
     };
 
