@@ -1018,19 +1018,17 @@ async function saveExamResults(results, total) {
                 correct++;
                 scoreSum += (r.score !== undefined ? r.score : 100);
             }
-            else if (r.status === 'incorrect') {
-                incorrect++;
-            }
             else {
-                empty++;
+                // Combine incorrect and empty as per request
+                incorrect++;
             }
             detailsJSON.push(r);
         });
     } else if (typeof results === 'object' && results !== null) {
         console.log('  - Results is object (legacy)');
         correct = results.correct || 0;
-        incorrect = results.incorrect || 0;
-        empty = results.empty || 0;
+        incorrect = (results.incorrect || 0) + (results.empty || 0);
+        empty = 0;
         scoreSum = (correct * 100);
     } else {
         console.log('  - Results is number (simple score)');
@@ -1040,8 +1038,6 @@ async function saveExamResults(results, total) {
     }
 
     // Determine overall percentage
-    // If we have an array of results, total is already results.length
-    // We want a percentage from 0 to 100.
     // Each 'correct' counts as 1 towards the count.
     // scoreSum is used for exercises that have partial scores (like speech).
     // For regular exercises, 'correct' adds 100 to scoreSum.
@@ -1057,7 +1053,7 @@ async function saveExamResults(results, total) {
         score_percentage: finalScorePct,
         correct_count: correct,
         incorrect_count: incorrect,
-        empty_count: empty,
+        empty_count: 0, // Explicitly 0 as empty is merged into incorrect
         details: JSON.stringify(detailsJSON)
     };
 
@@ -1173,8 +1169,7 @@ async function handleLevelComplete(results, total) {
     const scoreDisplay = `
         <div style="display: flex; gap: 1rem; justify-content: center; font-size: 1.2rem; flex-wrap: wrap;">
             <div style="color: var(--success);">✔ ${correctCount} Correctas</div>
-            <div style="color: var(--error);">✖ ${incorrectCount} Incorrectas</div>
-            <div style="color: var(--text-secondary);">⚪ ${emptyCount} Vacías</div>
+            <div style="color: var(--error);">✖ ${incorrectCount + emptyCount} Incorrectas</div>
         </div>
     `;
 
