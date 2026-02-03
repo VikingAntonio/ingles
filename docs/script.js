@@ -545,6 +545,50 @@ Mensaje final`,
                         }
                     ]
                 }
+            },
+            {
+                id: 2,
+                title: "Nivel 2: Listening Comprehension",
+                lesson: {
+                    title: "Escucha Activa",
+                    content: `
+                        <h2>Comprensión Auditiva</h2>
+                        <p>Escuchar con atención es clave para entender requerimientos y colaborar en equipos internacionales.</p>
+                        <p>En este nivel, practicarás la comprensión de mensajes específicos en audios cortos.</p>
+                    `
+                },
+                game: {
+                    type: "mixed",
+                    title: "Listening Exam",
+                    exercises: [
+                        {
+                            type: "listening-practice",
+                            title: "Exercise 1: Restaurant Discount",
+                            script: "This month, the restaurant is offering a twenty percent discount specifically to attract new customers through social media, not to reward existing ones.",
+                            question: "Why is the restaurant offering a discount?",
+                            options: [
+                                "To reward loyal customers",
+                                "To attract new customers",
+                                "To increase menu prices",
+                                "To reduce operating costs"
+                            ],
+                            correct: 1
+                        },
+                        {
+                            type: "listening-practice",
+                            title: "Exercise 2: Customer Service",
+                            script: "The manager explains that good customer service is important because it increases repeat visits and customer recommendations, which directly improves sales.",
+                            question: "Why does the manager say customer service is important?",
+                            options: [
+                                "Because it reduces staff workload",
+                                "Because it improves sales through repeat visits and recommendations",
+                                "Because it lowers food costs",
+                                "Because it replaces advertising"
+                            ],
+                            correct: 1
+                        }
+                    ]
+                }
             }
         ]
     },
@@ -624,7 +668,6 @@ Mensaje final`,
         ]
     }
 };
-
 // Global State 
 let currentState = {
     subject: null,
@@ -2258,7 +2301,7 @@ function setupListeningPractice(game, container, onComplete) {
 
     container.innerHTML = `
         <div class="speech-container fade-in">
-            <h3 style="color:var(--secondary-color); margin-bottom:0.3rem; font-size:1.2rem;">Practice 6: Simulated Listening</h3>
+            <h3 style="color:var(--secondary-color); margin-bottom:0.3rem; font-size:1.2rem;">${game.title || 'Practice: Simulated Listening'}</h3>
             <p style="color:#aaa; font-size:0.9rem; margin-bottom:1rem;">Listen to the recording and answer the question. You can only listen twice.</p>
             
             <div style="margin: 1.5rem 0;">
