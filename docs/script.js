@@ -586,6 +586,110 @@ Mensaje final`,
                                 "Because it replaces advertising"
                             ],
                             correct: 1
+                        },
+                        {
+                            type: "listening-practice",
+                            title: "Exercise 3: Marketing Platform",
+                            script: "For marketing purposes, the restaurant uses Instagram as its main platform and does not use email marketing or television advertising.",
+                            question: "Which marketing platform does the restaurant mainly use?",
+                            options: [
+                                "Email marketing",
+                                "Television advertising",
+                                "Instagram",
+                                "Printed flyers"
+                            ],
+                            correct: 2
+                        },
+                        {
+                            type: "listening-practice",
+                            title: "Exercise 4: Lunch Menu",
+                            script: "The restaurant offers a cheaper lunch menu only to increase sales during slow hours, not to change its dinner prices.",
+                            question: "What is the purpose of the cheaper lunch menu?",
+                            options: [
+                                "To reduce dinner prices",
+                                "To attract new employees",
+                                "To increase sales during slow hours",
+                                "To improve food quality"
+                            ],
+                            correct: 2
+                        },
+                        {
+                            type: "listening-practice",
+                            title: "Exercise 5: Online Reviews",
+                            script: "The owner states that online reviews strongly influence customers’ decisions, especially when they are choosing a restaurant for the first time.",
+                            question: "What do online reviews influence?",
+                            options: [
+                                "Customers’ decisions, especially first-time visits",
+                                "Staff training",
+                                "Menu design",
+                                "Restaurant location"
+                            ],
+                            correct: 0
+                        },
+                        {
+                            type: "listening-practice",
+                            title: "Exercise 6: Loyalty Program",
+                            script: "The restaurant launched a loyalty program to encourage repeat customers, offering a free meal after ten visits.",
+                            question: "What is the main goal of the loyalty program?",
+                            options: [
+                                "To attract new employees",
+                                "To reduce food waste",
+                                "To increase menu prices",
+                                "To encourage repeat customers"
+                            ],
+                            correct: 3
+                        },
+                        {
+                            type: "listening-practice",
+                            title: "Exercise 7: Menu Design",
+                            script: "The marketing manager decided to change the menu design to make the prices look clearer and easier to understand.",
+                            question: "Why was the menu design changed?",
+                            options: [
+                                "To add more dishes",
+                                "To increase prices",
+                                "To make prices clearer and easier to understand",
+                                "To reduce printing costs"
+                            ],
+                            correct: 2
+                        },
+                        {
+                            type: "listening-practice",
+                            title: "Exercise 8: Online Reservations",
+                            script: "The restaurant introduced online reservations to reduce waiting times and improve the customer experience.",
+                            question: "Why did the restaurant introduce online reservations?",
+                            options: [
+                                "To reduce waiting times and improve the customer experience",
+                                "To increase menu prices",
+                                "To hire fewer staff",
+                                "To close earlier"
+                            ],
+                            correct: 0
+                        },
+                        {
+                            type: "listening-practice",
+                            title: "Exercise 9: Staff Training",
+                            script: "The owner decided to invest in staff training to ensure consistent service quality across all shifts.",
+                            question: "Why did the owner invest in staff training?",
+                            options: [
+                                "To reduce salaries",
+                                "To speed up cooking time",
+                                "To ensure consistent service quality across all shifts",
+                                "To change the menu"
+                            ],
+                            correct: 2
+                        },
+                        {
+                            type: "listening-practice",
+                            title: "Exercise 10: Website Update",
+                            script: "The restaurant decided to update its website to make online ordering faster and more convenient for customers.",
+                            question: "Why did the restaurant update its website?",
+                            options: [
+                                "To change the restaurant’s name",
+                                "To reduce staff costs",
+                                "To remove the menu",
+                                "To make online ordering faster and more convenient for customers"
+                            ],
+                            correct: 3
                         }
                     ]
                 }
