@@ -14,7 +14,9 @@
 <body>
 
     <header>
-        <div class="logo">CodeMaster</div>
+        <div class="logo">
+            <img src="https://menutech.services/assets/img/logomt.png" alt="Menutech Logo" class="main-logo">
+        </div>
     </header>
 
     <main>
@@ -80,8 +82,12 @@
     </main>
 
     <footer>
-        <p>&copy; 2024 CodeMaster Platform.</p>
+        <p>&copy; <span id="current-year"></span> Menutech.</p>
     </footer>
+
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
 
     <!-- Level Complete Modal -->
     <div id="level-modal" class="modal">

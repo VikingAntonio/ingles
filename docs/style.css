@@ -68,10 +68,15 @@ header {
     font-size: 1.8rem;
     font-weight: 700;
     color: transparent;
-    background: linear-gradient(to right, var(--secondary-color), var(--primary-color));
-    -webkit-background-clip: text;
-    background-clip: text;
     letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+}
+
+.main-logo {
+    height: 50px;
+    width: auto;
+    object-fit: contain;
 }
 
 /* Main Layout */

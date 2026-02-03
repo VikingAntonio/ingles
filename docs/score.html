@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Resultados - CodeMaster</title>
+    <title>Dashboard de Resultados - Menutech</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -291,6 +291,12 @@
 </head>
 
 <body>
+    <header style="padding: 1rem 2rem; margin-bottom: 2rem; background: rgba(11, 17, 33, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+        <div class="logo">
+            <img src="https://menutech.services/assets/img/logomt.png" alt="Menutech Logo" class="main-logo">
+        </div>
+    </header>
+
     <div class="dashboard-container">
         <a href="index.html" class="back-btn">
             <i class="fas fa-arrow-left"></i> Volver al Inicio
@@ -360,7 +366,12 @@
         </div>
     </div>
 
+    <footer style="text-align: center; padding: 2rem; color: #94a3b8; font-size: 0.9rem; border-top: 1px solid rgba(255, 255, 255, 0.05); margin-top: 4rem;">
+        <p>&copy; <span id="footer-year"></span> Menutech.</p>
+    </footer>
+
     <script>
+        document.getElementById('footer-year').textContent = new Date().getFullYear();
         // Supabase Configuration
         const supabaseUrl = 'https://ojpyfjgkffmzwvukjagf.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcHlmamdrZmZtend2dWtqYWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDIwMzYsImV4cCI6MjA3OTcxODAzNn0.dlVYmoMumBse_O1PLBx0FeNITqY4YktefD6l_uonSgo';
