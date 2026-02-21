@@ -1,0 +1,31 @@
+Bases de Datos (SQL) - Nivel 1: SELECT Básico
+
+Pregunta 1: Selecciona todos los campos de la tabla 'usuarios'.
+Respuesta: SELECT * FROM usuarios
+
+Pregunta 2: Obtener el total de ingresos generados por cada venta.
+Respuesta: SELECT SUM(precio * cantidad) FROM ventas
+
+Pregunta 3: Mostrar únicamente el nombre del producto y su precio.
+Respuesta: SELECT nombre, precio FROM productos
+
+Pregunta 4: Listar las ventas cuya cantidad vendida sea mayor a 5 unidades.
+Respuesta: SELECT * FROM ventas WHERE cantidad > 5
+
+Pregunta 5: Mostrar las ventas que pertenezcan a la categoría 'Electrónica'.
+Respuesta: SELECT * FROM ventas WHERE categoria = 'Electrónica'
+
+Pregunta 6: Obtener las ventas donde el precio del producto sea mayor a 1,000.
+Respuesta: SELECT * FROM ventas WHERE precio > 1000
+
+Pregunta 7: Listar las ventas ordenadas por precio de menor a mayor.
+Respuesta: SELECT * FROM ventas ORDER BY precio ASC
+
+Pregunta 8: Mostrar las ventas ordenadas por cantidad vendida de mayor a menor.
+Respuesta: SELECT * FROM ventas ORDER BY cantidad DESC
+
+Pregunta 9: Obtener solo las primeras 10 ventas registradas.
+Respuesta: SELECT * FROM ventas LIMIT 10
+
+Pregunta 10: Contar cuántas ventas existen en total en la base de datos.
+Respuesta: SELECT COUNT(*) FROM ventas

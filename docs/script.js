@@ -729,7 +729,7 @@ Mensaje final`,
                         {
                             goal: "Pregunta 3: Mostrar únicamente el nombre del producto y su precio.",
                             correct: "SELECT nombre, precio FROM productos",
-                            blocks: ["SELECT", "nombre", "precio", "FROM", "productos", "*", "WHERE", "categoria"]
+                            blocks: ["SELECT", "nombre,", "precio", "FROM", "productos", "*", "WHERE", "categoria"]
                         },
                         {
                             goal: "Pregunta 4: Listar las ventas cuya cantidad vendida sea mayor a 5 unidades.",
