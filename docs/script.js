@@ -768,6 +768,79 @@ Mensaje final`,
                         }
                     ]
                 }
+            },
+            {
+                id: 2,
+                title: "Nivel 2: Consultas Avanzadas",
+                lesson: {
+                    title: "Esquema: Usuarios y Suscripciones",
+                    content: `
+                        <h2>Relacionando Tablas Complejas</h2>
+                        <p>Para este nivel, trabajaremos con un esquema de <strong>usuarios</strong>, <strong>roles</strong>, <strong>suscripciones</strong> y <strong>planes</strong>.</p>
+                        <h3>Conceptos Clave</h3>
+                        <ul>
+                            <li><strong>Multiple JOINs:</strong> Conectar más de dos tablas.</li>
+                            <li><strong>LEFT JOIN:</strong> Encontrar registros sin relación.</li>
+                            <li><strong>Agregaciones:</strong> SUM, AVG, COUNT con GROUP BY.</li>
+                        </ul>
+                    `
+                },
+                game: {
+                    type: "builder",
+                    title: "SQL Builder: Enterprise Queries",
+                    challenges: [
+                        {
+                            goal: "Pregunta 1: Obtener el nombre del usuario y el nombre de su rol.",
+                            correct: "SELECT usuarios.nombre, roles.nombre FROM usuarios JOIN roles ON usuarios.id_rol = roles.id",
+                            blocks: ["SELECT", "usuarios.nombre,", "roles.nombre", "FROM", "usuarios", "JOIN", "roles", "ON", "usuarios.id_rol", "=", "roles.id"]
+                        },
+                        {
+                            goal: "Pregunta 2: Listar los usuarios que tienen un plan 'Premium'.",
+                            correct: "SELECT usuarios.nombre FROM usuarios JOIN suscripciones ON usuarios.id_suscripcion = suscripciones.id JOIN planes ON suscripciones.id_plan = planes.id WHERE planes.nombre = 'Premium'",
+                            blocks: ["SELECT", "usuarios.nombre", "FROM", "usuarios", "JOIN", "suscripciones", "ON", "usuarios.id_suscripcion", "=", "suscripciones.id", "JOIN", "planes", "ON", "suscripciones.id_plan", "=", "planes.id", "WHERE", "planes.nombre", "=", "'Premium'"]
+                        },
+                        {
+                            goal: "Pregunta 3: Contar cuántos usuarios están activos.",
+                            correct: "SELECT COUNT(*) FROM usuarios WHERE activo = true",
+                            blocks: ["SELECT", "COUNT(*)", "FROM", "usuarios", "WHERE", "activo", "=", "true", "false", "1"]
+                        },
+                        {
+                            goal: "Pregunta 4: Mostrar el nombre del plan y el precio de todas las suscripciones activas.",
+                            correct: "SELECT planes.nombre, planes.precio FROM suscripciones JOIN planes ON suscripciones.id_plan = planes.id WHERE suscripciones.activa = true",
+                            blocks: ["SELECT", "planes.nombre,", "planes.precio", "FROM", "suscripciones", "JOIN", "planes", "ON", "suscripciones.id_plan", "=", "planes.id", "WHERE", "suscripciones.activa", "=", "true"]
+                        },
+                        {
+                            goal: "Pregunta 5: Calcular el promedio de precio de todos los planes.",
+                            correct: "SELECT AVG(precio) FROM planes",
+                            blocks: ["SELECT", "AVG(precio)", "FROM", "planes", "SUM(precio)", "COUNT(precio)"]
+                        },
+                        {
+                            goal: "Pregunta 6: Listar usuarios y sus fechas de fin de suscripción ordenados por fecha.",
+                            correct: "SELECT usuarios.nombre, suscripciones.fecha_fin FROM usuarios JOIN suscripciones ON usuarios.id_suscripcion = suscripciones.id ORDER BY suscripciones.fecha_fin ASC",
+                            blocks: ["SELECT", "usuarios.nombre,", "suscripciones.fecha_fin", "FROM", "usuarios", "JOIN", "suscripciones", "ON", "usuarios.id_suscripcion", "=", "suscripciones.id", "ORDER BY", "suscripciones.fecha_fin", "ASC", "DESC"]
+                        },
+                        {
+                            goal: "Pregunta 7: Encontrar el nombre de los roles que no tienen usuarios asignados.",
+                            correct: "SELECT roles.nombre FROM roles LEFT JOIN usuarios ON roles.id = usuarios.id_rol WHERE usuarios.id IS NULL",
+                            blocks: ["SELECT", "roles.nombre", "FROM", "roles", "LEFT JOIN", "usuarios", "ON", "roles.id", "=", "usuarios.id_rol", "WHERE", "usuarios.id", "IS NULL", "NOT NULL"]
+                        },
+                        {
+                            goal: "Pregunta 8: Obtener el total de ingresos por cada tipo de plan activo.",
+                            correct: "SELECT planes.nombre, SUM(planes.precio) FROM suscripciones JOIN planes ON suscripciones.id_plan = planes.id WHERE suscripciones.activa = true GROUP BY planes.nombre",
+                            blocks: ["SELECT", "planes.nombre,", "SUM(planes.precio)", "FROM", "suscripciones", "JOIN", "planes", "ON", "suscripciones.id_plan", "=", "planes.id", "WHERE", "suscripciones.activa", "=", "true", "GROUP BY", "planes.nombre"]
+                        },
+                        {
+                            goal: "Pregunta 9: Listar usuarios cuyo email termina en '@gmail.com'.",
+                            correct: "SELECT * FROM usuarios WHERE email LIKE '%@gmail.com'",
+                            blocks: ["SELECT", "*", "FROM", "usuarios", "WHERE", "email", "LIKE", "'%@gmail.com'", "'@gmail.com'", "="]
+                        },
+                        {
+                            goal: "Pregunta 10: Mostrar los 3 planes más caros.",
+                            correct: "SELECT * FROM planes ORDER BY precio DESC LIMIT 3",
+                            blocks: ["SELECT", "*", "FROM", "planes", "ORDER BY", "precio", "DESC", "ASC", "LIMIT", "3", "5"]
+                        }
+                    ]
+                }
             }
         ]
     }

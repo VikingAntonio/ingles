@@ -29,3 +29,37 @@ Respuesta: SELECT * FROM ventas LIMIT 10
 
 Pregunta 10: Contar cuántas ventas existen en total en la base de datos.
 Respuesta: SELECT COUNT(*) FROM ventas
+
+---
+
+Bases de Datos (SQL) - Nivel 2: Consultas Avanzadas (Esquema Usuarios/Suscripciones)
+
+Pregunta 1: Obtener el nombre del usuario y el nombre de su rol.
+Respuesta: SELECT usuarios.nombre, roles.nombre FROM usuarios JOIN roles ON usuarios.id_rol = roles.id
+
+Pregunta 2: Listar los usuarios que tienen un plan 'Premium'.
+Respuesta: SELECT usuarios.nombre FROM usuarios JOIN suscripciones ON usuarios.id_suscripcion = suscripciones.id JOIN planes ON suscripciones.id_plan = planes.id WHERE planes.nombre = 'Premium'
+
+Pregunta 3: Contar cuántos usuarios están activos.
+Respuesta: SELECT COUNT(*) FROM usuarios WHERE activo = true
+
+Pregunta 4: Mostrar el nombre del plan y el precio de todas las suscripciones activas.
+Respuesta: SELECT planes.nombre, planes.precio FROM suscripciones JOIN planes ON suscripciones.id_plan = planes.id WHERE suscripciones.activa = true
+
+Pregunta 5: Calcular el promedio de precio de todos los planes.
+Respuesta: SELECT AVG(precio) FROM planes
+
+Pregunta 6: Listar usuarios y sus fechas de fin de suscripción ordenados por fecha.
+Respuesta: SELECT usuarios.nombre, suscripciones.fecha_fin FROM usuarios JOIN suscripciones ON usuarios.id_suscripcion = suscripciones.id ORDER BY suscripciones.fecha_fin ASC
+
+Pregunta 7: Encontrar el nombre de los roles que no tienen usuarios asignados.
+Respuesta: SELECT roles.nombre FROM roles LEFT JOIN usuarios ON roles.id = usuarios.id_rol WHERE usuarios.id IS NULL
+
+Pregunta 8: Obtener el total de ingresos por cada tipo de plan activo.
+Respuesta: SELECT planes.nombre, SUM(planes.precio) FROM suscripciones JOIN planes ON suscripciones.id_plan = planes.id WHERE suscripciones.activa = true GROUP BY planes.nombre
+
+Pregunta 9: Listar usuarios cuyo email termina en '@gmail.com'.
+Respuesta: SELECT * FROM usuarios WHERE email LIKE '%@gmail.com'
+
+Pregunta 10: Mostrar los 3 planes más caros.
+Respuesta: SELECT * FROM planes ORDER BY precio DESC LIMIT 3
