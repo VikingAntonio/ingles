@@ -1613,6 +1613,30 @@ async function saveExamResults(results, total) {
             return false;
         } else {
             console.log("✅ Saved Success:", response.data);
+
+            // --- NEW: Save individual answers relationally ---
+            if (response.data && response.data[0] && response.data[0].id) {
+                const examId = response.data[0].id;
+                const answersToInsert = detailsJSON.map((res, index) => ({
+                    exam_id: examId,
+                    question_number: index + 1,
+                    status: res.status || 'empty'
+                }));
+
+                if (answersToInsert.length > 0) {
+                    console.log("📤 Inserting individual answers into 'exam_answers'...");
+                    const { error: answersError } = await supabaseClient
+                        .from('exam_answers')
+                        .insert(answersToInsert);
+
+                    if (answersError) {
+                        console.warn("⚠️ Could not save individual answers to 'exam_answers'. This is expected if the table hasn't been created yet:", answersError.message);
+                    } else {
+                        console.log("✅ Individual answers saved successfully.");
+                    }
+                }
+            }
+
             return true;
         }
     } catch (err) {
