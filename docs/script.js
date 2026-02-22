@@ -771,73 +771,73 @@ Mensaje final`,
             },
             {
                 id: 2,
-                title: "Nivel 2: Consultas Avanzadas",
+                title: "Nivel 2: Enterprise Schema",
                 lesson: {
-                    title: "Esquema: Usuarios y Suscripciones",
+                    title: "Consultas Avanzadas y Joins",
                     content: `
-                        <h2>Relacionando Tablas Complejas</h2>
-                        <p>Para este nivel, trabajaremos con un esquema de <strong>usuarios</strong>, <strong>roles</strong>, <strong>suscripciones</strong> y <strong>planes</strong>.</p>
-                        <h3>Conceptos Clave</h3>
+                        <h2>Esquema Empresarial</h2>
+                        <p>En entornos reales, los datos están repartidos en múltiples tablas. Usamos <strong>JOIN</strong> para combinarlas.</p>
+                        <h3>Tipos de Joins</h3>
                         <ul>
-                            <li><strong>Multiple JOINs:</strong> Conectar más de dos tablas.</li>
-                            <li><strong>LEFT JOIN:</strong> Encontrar registros sin relación.</li>
-                            <li><strong>Agregaciones:</strong> SUM, AVG, COUNT con GROUP BY.</li>
+                            <li><strong>INNER JOIN:</strong> Registros con valores coincidentes en ambas tablas.</li>
+                            <li><strong>LEFT JOIN:</strong> Todos los registros de la tabla izquierda y los coincidentes de la derecha.</li>
                         </ul>
                     `
                 },
                 game: {
                     type: "builder",
                     title: "SQL Builder: Enterprise Queries",
+                    showSchemaDiagram: true,
                     challenges: [
                         {
-                            goal: "Pregunta 1: Obtener el nombre del usuario y el nombre de su rol.",
-                            correct: "SELECT usuarios.nombre, roles.nombre FROM usuarios JOIN roles ON usuarios.id_rol = roles.id",
-                            blocks: ["SELECT", "usuarios.nombre,", "roles.nombre", "FROM", "usuarios", "JOIN", "roles", "ON", "usuarios.id_rol", "=", "roles.id"]
+                            goal: "Pregunta 1: Obtener el nombre del usuario y el nombre de su rol asignado.",
+                            correct: "SELECT usuarios.nombre, roles.nombre_rol FROM usuarios JOIN roles ON usuarios.id_rol = roles.id_rol",
+                            blocks: ["SELECT", "usuarios.nombre,", "roles.nombre_rol", "FROM", "usuarios", "JOIN", "roles", "ON", "usuarios.id_rol", "=", "roles.id_rol", "WHERE"]
                         },
                         {
-                            goal: "Pregunta 2: Listar los usuarios que tienen un plan 'Premium'.",
-                            correct: "SELECT usuarios.nombre FROM usuarios JOIN suscripciones ON usuarios.id_suscripcion = suscripciones.id JOIN planes ON suscripciones.id_plan = planes.id WHERE planes.nombre = 'Premium'",
-                            blocks: ["SELECT", "usuarios.nombre", "FROM", "usuarios", "JOIN", "suscripciones", "ON", "usuarios.id_suscripcion", "=", "suscripciones.id", "JOIN", "planes", "ON", "suscripciones.id_plan", "=", "planes.id", "WHERE", "planes.nombre", "=", "'Premium'"]
+                            goal: "Pregunta 2: Listar los nombres de usuarios que tienen un plan 'Premium'.",
+                            correct: "SELECT usuarios.nombre FROM usuarios JOIN suscripciones ON usuarios.id_usuario = suscripciones.id_usuario JOIN planes ON suscripciones.id_plan = planes.id_plan WHERE planes.nombre_plan = 'Premium'",
+                            blocks: ["SELECT", "usuarios.nombre", "FROM", "usuarios", "JOIN", "suscripciones", "ON", "usuarios.id_usuario", "=", "suscripciones.id_usuario", "JOIN", "planes", "ON", "suscripciones.id_plan", "=", "planes.id_plan", "WHERE", "planes.nombre_plan", "=", "'Premium'"]
                         },
                         {
-                            goal: "Pregunta 3: Contar cuántos usuarios están activos.",
-                            correct: "SELECT COUNT(*) FROM usuarios WHERE activo = true",
-                            blocks: ["SELECT", "COUNT(*)", "FROM", "usuarios", "WHERE", "activo", "=", "true", "false", "1"]
+                            goal: "Pregunta 3: Contar cuántos usuarios tienen el estado 'ACTIVO'.",
+                            correct: "SELECT COUNT(*) FROM usuarios WHERE estado = 'ACTIVO'",
+                            blocks: ["SELECT", "COUNT(*)", "FROM", "usuarios", "WHERE", "estado", "=", "'ACTIVO'", "'INACTIVO'"]
                         },
                         {
-                            goal: "Pregunta 4: Mostrar el nombre del plan y el precio de todas las suscripciones activas.",
-                            correct: "SELECT planes.nombre, planes.precio FROM suscripciones JOIN planes ON suscripciones.id_plan = planes.id WHERE suscripciones.activa = true",
-                            blocks: ["SELECT", "planes.nombre,", "planes.precio", "FROM", "suscripciones", "JOIN", "planes", "ON", "suscripciones.id_plan", "=", "planes.id", "WHERE", "suscripciones.activa", "=", "true"]
+                            goal: "Pregunta 4: Mostrar el nombre y precio de los planes de las suscripciones que están 'ACTIVA'.",
+                            correct: "SELECT planes.nombre_plan, planes.precio FROM suscripciones JOIN planes ON suscripciones.id_plan = planes.id_plan WHERE suscripciones.estado = 'ACTIVA'",
+                            blocks: ["SELECT", "planes.nombre_plan,", "planes.precio", "FROM", "suscripciones", "JOIN", "planes", "ON", "suscripciones.id_plan", "=", "planes.id_plan", "WHERE", "suscripciones.estado", "=", "'ACTIVA'"]
                         },
                         {
-                            goal: "Pregunta 5: Calcular el promedio de precio de todos los planes.",
+                            goal: "Pregunta 5: Obtener el precio promedio de todos los planes disponibles.",
                             correct: "SELECT AVG(precio) FROM planes",
                             blocks: ["SELECT", "AVG(precio)", "FROM", "planes", "SUM(precio)", "COUNT(precio)"]
                         },
                         {
-                            goal: "Pregunta 6: Listar usuarios y sus fechas de fin de suscripción ordenados por fecha.",
-                            correct: "SELECT usuarios.nombre, suscripciones.fecha_fin FROM usuarios JOIN suscripciones ON usuarios.id_suscripcion = suscripciones.id ORDER BY suscripciones.fecha_fin ASC",
-                            blocks: ["SELECT", "usuarios.nombre,", "suscripciones.fecha_fin", "FROM", "usuarios", "JOIN", "suscripciones", "ON", "usuarios.id_suscripcion", "=", "suscripciones.id", "ORDER BY", "suscripciones.fecha_fin", "ASC", "DESC"]
+                            goal: "Pregunta 6: Listar usuarios y su fecha de fin de suscripción, ordenados por la fecha más cercana a vencer.",
+                            correct: "SELECT usuarios.nombre, suscripciones.fecha_fin FROM usuarios JOIN suscripciones ON usuarios.id_usuario = suscripciones.id_usuario ORDER BY suscripciones.fecha_fin ASC",
+                            blocks: ["SELECT", "usuarios.nombre,", "suscripciones.fecha_fin", "FROM", "usuarios", "JOIN", "suscripciones", "ON", "usuarios.id_usuario", "=", "suscripciones.id_usuario", "ORDER BY", "suscripciones.fecha_fin", "ASC", "DESC"]
                         },
                         {
-                            goal: "Pregunta 7: Encontrar el nombre de los roles que no tienen usuarios asignados.",
-                            correct: "SELECT roles.nombre FROM roles LEFT JOIN usuarios ON roles.id = usuarios.id_rol WHERE usuarios.id IS NULL",
-                            blocks: ["SELECT", "roles.nombre", "FROM", "roles", "LEFT JOIN", "usuarios", "ON", "roles.id", "=", "usuarios.id_rol", "WHERE", "usuarios.id", "IS NULL", "NOT NULL"]
+                            goal: "Pregunta 7: Mostrar los nombres de roles que no tienen ningún usuario asignado.",
+                            correct: "SELECT roles.nombre_rol FROM roles LEFT JOIN usuarios ON roles.id_rol = usuarios.id_rol WHERE usuarios.id_usuario IS NULL",
+                            blocks: ["SELECT", "roles.nombre_rol", "FROM", "roles", "LEFT JOIN", "usuarios", "ON", "roles.id_rol", "=", "usuarios.id_rol", "WHERE", "usuarios.id_usuario", "IS NULL", "IS NOT NULL"]
                         },
                         {
-                            goal: "Pregunta 8: Obtener el total de ingresos por cada tipo de plan activo.",
-                            correct: "SELECT planes.nombre, SUM(planes.precio) FROM suscripciones JOIN planes ON suscripciones.id_plan = planes.id WHERE suscripciones.activa = true GROUP BY planes.nombre",
-                            blocks: ["SELECT", "planes.nombre,", "SUM(planes.precio)", "FROM", "suscripciones", "JOIN", "planes", "ON", "suscripciones.id_plan", "=", "planes.id", "WHERE", "suscripciones.activa", "=", "true", "GROUP BY", "planes.nombre"]
+                            goal: "Pregunta 8: Obtener el total recaudado (suma de precios) por cada tipo de plan en suscripciones 'ACTIVA'.",
+                            correct: "SELECT planes.nombre_plan, SUM(planes.precio) FROM suscripciones JOIN planes ON suscripciones.id_plan = planes.id_plan WHERE suscripciones.estado = 'ACTIVA' GROUP BY planes.nombre_plan",
+                            blocks: ["SELECT", "planes.nombre_plan,", "SUM(planes.precio)", "FROM", "suscripciones", "JOIN", "planes", "ON", "suscripciones.id_plan", "=", "planes.id_plan", "WHERE", "suscripciones.estado", "=", "'ACTIVA'", "GROUP BY", "planes.nombre_plan"]
                         },
                         {
-                            goal: "Pregunta 9: Listar usuarios cuyo email termina en '@gmail.com'.",
+                            goal: "Pregunta 9: Seleccionar todos los usuarios cuyo email termine en '@gmail.com'.",
                             correct: "SELECT * FROM usuarios WHERE email LIKE '%@gmail.com'",
-                            blocks: ["SELECT", "*", "FROM", "usuarios", "WHERE", "email", "LIKE", "'%@gmail.com'", "'@gmail.com'", "="]
+                            blocks: ["SELECT", "*", "FROM", "usuarios", "WHERE", "email", "LIKE", "'%@gmail.com'", "'gmail%'"]
                         },
                         {
                             goal: "Pregunta 10: Mostrar los 3 planes más caros.",
                             correct: "SELECT * FROM planes ORDER BY precio DESC LIMIT 3",
-                            blocks: ["SELECT", "*", "FROM", "planes", "ORDER BY", "precio", "DESC", "ASC", "LIMIT", "3", "5"]
+                            blocks: ["SELECT", "*", "FROM", "planes", "ORDER BY", "precio", "DESC", "LIMIT", "3", "ASC", "5"]
                         }
                     ]
                 }
@@ -1116,9 +1116,29 @@ function renderGame(game) {
              <div class="level-progress">
                <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
             </div>
+            <!-- Global Floating Diagram Panel -->
+            <div id="diagram-overlay-panel" class="floating-diagram-panel hidden">
+                <div class="panel-header" id="diagram-header">
+                    <span>Enterprise Schema</span>
+                    <button id="btn-close-diagram">×</button>
+                </div>
+                <div class="panel-body">
+                    <div class="zoom-controls">
+                        <button id="btn-zoom-in" title="Zoom In">+</button>
+                        <button id="btn-zoom-out" title="Zoom Out">-</button>
+                        <button id="btn-zoom-reset" title="Reset Zoom">1:1</button>
+                    </div>
+                    <div class="image-viewport" id="diagram-viewport">
+                        <img src="database_diagram.png" id="diagram-image" alt="Database Diagram">
+                    </div>
+                </div>
+            </div>
             <div id="active-game-area" style="width:100%; height:100%;"></div>
         </div>
     `;
+
+    // Initialize Diagram Panel Once
+    setupGlobalDiagramPanel();
 
     const container = document.getElementById('active-game-area');
     const exercises = game.exercises || [game];
@@ -1198,6 +1218,99 @@ function renderGame(game) {
 
     // Start
     loadExercise();
+}
+
+/**
+ * GLOBAL Diagram Panel Logic
+ * Sets up persistent listeners for the diagram panel.
+ */
+function setupGlobalDiagramPanel() {
+    const panel = document.getElementById('diagram-overlay-panel');
+    const header = document.getElementById('diagram-header');
+    const closeBtn = document.getElementById('btn-close-diagram');
+    const img = document.getElementById('diagram-image');
+    const viewport = document.getElementById('diagram-viewport');
+
+    if (!panel || !header) return;
+
+    closeBtn.onclick = () => panel.classList.add('hidden');
+
+    // Draggable Logic using addEventListener
+    let isDragging = false;
+    let startX, startY, initialX, initialY;
+
+    const onMouseMove = (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        panel.style.left = initialX + dx + 'px';
+        panel.style.top = initialY + dy + 'px';
+    };
+
+    const onMouseUp = () => {
+        isDragging = false;
+        panel.style.cursor = 'default';
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    header.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        initialX = panel.offsetLeft;
+        initialY = panel.offsetTop;
+        panel.style.cursor = 'grabbing';
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    // Zoom Logic
+    let scale = 1;
+    let translateX = 0;
+    let translateY = 0;
+
+    const updateTransform = () => {
+        img.style.transform = `scale(${scale}) translate(${translateX}px, ${translateY}px)`;
+    };
+
+    document.getElementById('btn-zoom-in').onclick = () => { scale += 0.2; updateTransform(); };
+    document.getElementById('btn-zoom-out').onclick = () => { scale = Math.max(0.2, scale - 0.2); updateTransform(); };
+    document.getElementById('btn-zoom-reset').onclick = () => { scale = 1; translateX = 0; translateY = 0; updateTransform(); };
+
+    // Panning Logic
+    let isPanning = false;
+    let pStartX, pStartY;
+
+    const onPanMove = (e) => {
+        if (!isPanning) return;
+        const dx = e.clientX - pStartX;
+        const dy = e.clientY - pStartY;
+        translateX += dx / scale;
+        translateY += dy / scale;
+        pStartX = e.clientX;
+        pStartY = e.clientY;
+        updateTransform();
+    };
+
+    const onPanEnd = () => {
+        isPanning = false;
+        viewport.style.cursor = 'grab';
+        document.removeEventListener('mousemove', onPanMove);
+        document.removeEventListener('mouseup', onPanEnd);
+    };
+
+    viewport.addEventListener('mousedown', (e) => {
+        if (e.target === img || e.target === viewport) {
+            isPanning = true;
+            pStartX = e.clientX;
+            pStartY = e.clientY;
+            viewport.style.cursor = 'grabbing';
+            document.addEventListener('mousemove', onPanMove);
+            document.addEventListener('mouseup', onPanEnd);
+            e.preventDefault();
+        }
+    });
 }
 
 // --- SUPABASE SAVE FUNCTION ---
@@ -1968,7 +2081,7 @@ function setupFlowchartCanvas(exercise, container, onSuccess) {
         }));
         const edges = Array.from(connSvg.querySelectorAll('line')).map(l => ({
             from: l.getAttribute('data-from'),
-            to: l.getAttribute('data-to')
+            to: l.getAttribute('to')
         }));
 
         const nodeMap = {};
@@ -2626,7 +2739,11 @@ function setupBuilder(game, container, onComplete) {
         currentQuery = [];
 
         container.innerHTML = ` 
-            <h3>Misión: ${challenge.goal}</h3> 
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>Misión: ${challenge.goal}</h3>
+                ${game.showSchemaDiagram ? '<button id="btn-show-schema" class="game-btn small" style="background:var(--primary-color);">👁 Ver Esquema</button>' : ''}
+            </div>
+
             <div id="query-display" style="background:#000; color:#0f0; padding:1rem; margin:1rem 0; min-height:3rem; font-family:monospace; border-radius:4px;"></div> 
             <div id="blocks-area" class="game-options"> 
                 ${challenge.blocks.sort(() => Math.random() - 0.5).map(block => ` 
@@ -2646,17 +2763,27 @@ function setupBuilder(game, container, onComplete) {
                 updateDisplay();
             };
         });
+
+        // Diagram Panel logic for this exercise
+        const showBtn = document.getElementById('btn-show-schema');
+        if (showBtn) {
+            showBtn.onclick = () => {
+                const panel = document.getElementById('diagram-overlay-panel');
+                if (panel) panel.classList.remove('hidden');
+            };
+        }
     }
 
     window.updateDisplay = () => {
         const display = document.getElementById('query-display');
-        display.textContent = currentQuery.join(' ');
+        if (display) display.textContent = currentQuery.join(' ');
     };
 
     window.resetQuery = () => {
         currentQuery = [];
         updateDisplay();
-        document.getElementById('builder-feedback').textContent = '';
+        const feedback = document.getElementById('builder-feedback');
+        if (feedback) feedback.textContent = '';
     };
 
     // Track internal results for the detailed log
@@ -2895,4 +3022,3 @@ function setupQuizItem(exercise, container, onComplete) {
         };
     });
 }
-

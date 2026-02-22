@@ -1,65 +1,25 @@
-Bases de Datos (SQL) - Nivel 1: SELECT Básico
+Respuestas Correctas - Test de Bases de Datos
 
-Pregunta 1: Selecciona todos los campos de la tabla 'usuarios'.
-Respuesta: SELECT * FROM usuarios
+Nivel 1: SELECT Básico
+1. SELECT * FROM usuarios
+2. SELECT SUM(precio * cantidad) FROM ventas
+3. SELECT nombre, precio FROM productos
+4. SELECT * FROM ventas WHERE cantidad > 5
+5. SELECT * FROM ventas WHERE categoria = 'Electrónica'
+6. SELECT * FROM ventas WHERE precio > 1000
+7. SELECT * FROM ventas ORDER BY precio ASC
+8. SELECT * FROM ventas ORDER BY cantidad DESC
+9. SELECT * FROM ventas LIMIT 10
+10. SELECT COUNT(*) FROM ventas
 
-Pregunta 2: Obtener el total de ingresos generados por cada venta.
-Respuesta: SELECT SUM(precio * cantidad) FROM ventas
-
-Pregunta 3: Mostrar únicamente el nombre del producto y su precio.
-Respuesta: SELECT nombre, precio FROM productos
-
-Pregunta 4: Listar las ventas cuya cantidad vendida sea mayor a 5 unidades.
-Respuesta: SELECT * FROM ventas WHERE cantidad > 5
-
-Pregunta 5: Mostrar las ventas que pertenezcan a la categoría 'Electrónica'.
-Respuesta: SELECT * FROM ventas WHERE categoria = 'Electrónica'
-
-Pregunta 6: Obtener las ventas donde el precio del producto sea mayor a 1,000.
-Respuesta: SELECT * FROM ventas WHERE precio > 1000
-
-Pregunta 7: Listar las ventas ordenadas por precio de menor a mayor.
-Respuesta: SELECT * FROM ventas ORDER BY precio ASC
-
-Pregunta 8: Mostrar las ventas ordenadas por cantidad vendida de mayor a menor.
-Respuesta: SELECT * FROM ventas ORDER BY cantidad DESC
-
-Pregunta 9: Obtener solo las primeras 10 ventas registradas.
-Respuesta: SELECT * FROM ventas LIMIT 10
-
-Pregunta 10: Contar cuántas ventas existen en total en la base de datos.
-Respuesta: SELECT COUNT(*) FROM ventas
-
----
-
-Bases de Datos (SQL) - Nivel 2: Consultas Avanzadas (Esquema Usuarios/Suscripciones)
-
-Pregunta 1: Obtener el nombre del usuario y el nombre de su rol.
-Respuesta: SELECT usuarios.nombre, roles.nombre FROM usuarios JOIN roles ON usuarios.id_rol = roles.id
-
-Pregunta 2: Listar los usuarios que tienen un plan 'Premium'.
-Respuesta: SELECT usuarios.nombre FROM usuarios JOIN suscripciones ON usuarios.id_suscripcion = suscripciones.id JOIN planes ON suscripciones.id_plan = planes.id WHERE planes.nombre = 'Premium'
-
-Pregunta 3: Contar cuántos usuarios están activos.
-Respuesta: SELECT COUNT(*) FROM usuarios WHERE activo = true
-
-Pregunta 4: Mostrar el nombre del plan y el precio de todas las suscripciones activas.
-Respuesta: SELECT planes.nombre, planes.precio FROM suscripciones JOIN planes ON suscripciones.id_plan = planes.id WHERE suscripciones.activa = true
-
-Pregunta 5: Calcular el promedio de precio de todos los planes.
-Respuesta: SELECT AVG(precio) FROM planes
-
-Pregunta 6: Listar usuarios y sus fechas de fin de suscripción ordenados por fecha.
-Respuesta: SELECT usuarios.nombre, suscripciones.fecha_fin FROM usuarios JOIN suscripciones ON usuarios.id_suscripcion = suscripciones.id ORDER BY suscripciones.fecha_fin ASC
-
-Pregunta 7: Encontrar el nombre de los roles que no tienen usuarios asignados.
-Respuesta: SELECT roles.nombre FROM roles LEFT JOIN usuarios ON roles.id = usuarios.id_rol WHERE usuarios.id IS NULL
-
-Pregunta 8: Obtener el total de ingresos por cada tipo de plan activo.
-Respuesta: SELECT planes.nombre, SUM(planes.precio) FROM suscripciones JOIN planes ON suscripciones.id_plan = planes.id WHERE suscripciones.activa = true GROUP BY planes.nombre
-
-Pregunta 9: Listar usuarios cuyo email termina en '@gmail.com'.
-Respuesta: SELECT * FROM usuarios WHERE email LIKE '%@gmail.com'
-
-Pregunta 10: Mostrar los 3 planes más caros.
-Respuesta: SELECT * FROM planes ORDER BY precio DESC LIMIT 3
+Nivel 2: Enterprise Schema
+1. SELECT usuarios.nombre, roles.nombre_rol FROM usuarios JOIN roles ON usuarios.id_rol = roles.id_rol
+2. SELECT usuarios.nombre FROM usuarios JOIN suscripciones ON usuarios.id_usuario = suscripciones.id_usuario JOIN planes ON suscripciones.id_plan = planes.id_plan WHERE planes.nombre_plan = 'Premium'
+3. SELECT COUNT(*) FROM usuarios WHERE estado = 'ACTIVO'
+4. SELECT planes.nombre_plan, planes.precio FROM suscripciones JOIN planes ON suscripciones.id_plan = planes.id_plan WHERE suscripciones.estado = 'ACTIVA'
+5. SELECT AVG(precio) FROM planes
+6. SELECT usuarios.nombre, suscripciones.fecha_fin FROM usuarios JOIN suscripciones ON usuarios.id_usuario = suscripciones.id_usuario ORDER BY suscripciones.fecha_fin ASC
+7. SELECT roles.nombre_rol FROM roles LEFT JOIN usuarios ON roles.id_rol = usuarios.id_rol WHERE usuarios.id_usuario IS NULL
+8. SELECT planes.nombre_plan, SUM(planes.precio) FROM suscripciones JOIN planes ON suscripciones.id_plan = planes.id_plan WHERE suscripciones.estado = 'ACTIVA' GROUP BY planes.nombre_plan
+9. SELECT * FROM usuarios WHERE email LIKE '%@gmail.com'
+10. SELECT * FROM planes ORDER BY precio DESC LIMIT 3
