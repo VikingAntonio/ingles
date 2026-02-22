@@ -727,6 +727,96 @@ footer {
     background: rgba(255, 255, 255, 0.05);
 }
 
+/* Floating Diagram Panel Styles */
+.floating-diagram-panel {
+    position: fixed;
+    top: 50px;
+    right: 50px;
+    width: 600px;
+    height: 500px;
+    background: #1e293b;
+    border: 2px solid var(--primary-color);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    z-index: 2000;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    transition: opacity 0.3s;
+}
+
+.floating-diagram-panel.hidden {
+    display: none;
+    opacity: 0;
+}
+
+.panel-header {
+    background: var(--primary-color);
+    padding: 0.8rem 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;
+    border-radius: 10px 10px 0 0;
+}
+
+.panel-header span {
+    font-weight: bold;
+    color: white;
+}
+
+#btn-close-diagram {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.panel-body {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #0f172a;
+}
+
+.zoom-controls {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    z-index: 10;
+}
+
+.zoom-controls button {
+    width: 35px;
+    height: 35px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    cursor: pointer;
+}
+
+.image-viewport {
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#diagram-image {
+    max-width: none;
+    transition: transform 0.1s ease-out;
+}
+
 /* Flowchart Builder Styles */
 .flowchart-workspace {
     display: flex;
