@@ -1,0 +1,33 @@
+# Actualización de Base de Datos Supabase (Tabla: exam_results)
+
+Para que el dashboard de resultados (score.html) muestre el detalle de cada pregunta, es necesario asegurarse de que la columna `details` esté configurada correctamente.
+
+## Configuración de la Columna
+- **Nombre de la columna:** `details`
+- **Tipo de dato:** `jsonb` (recomendado) o `text` (si se guarda como string JSON).
+
+## Estructura de Datos Esperada
+La aplicación guarda automáticamente los resultados en el siguiente formato JSON dentro de la columna `details`:
+
+```json
+{
+  "metadata": {
+    "candidate": "Nombre del Candidato",
+    "evaluator": "Nombre del Evaluador",
+    "position": "Puesto",
+    "date": "2024-05-20T12:00:00Z"
+  },
+  "results": [
+    {
+      "type": "tipo_de_ejercicio",
+      "title": "Título de la Pregunta o Ejercicio",
+      "status": "correct | incorrect | empty",
+      "score": 100
+    },
+    ...
+  ]
+}
+```
+
+## Nota sobre compatibilidad
+El sistema cuenta con lógica de recuperación para versiones anteriores donde `details` era un array simple, pero para la visualización completa en el nuevo dashboard se recomienda la estructura de objeto con la propiedad `results`.

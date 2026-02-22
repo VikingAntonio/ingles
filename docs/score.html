@@ -287,6 +287,90 @@
             overflow-y: auto;
             display: none;
         }
+
+        /* Detailed Results Styling */
+        .detail-row {
+            display: none;
+            background: rgba(15, 23, 42, 0.4) !important;
+        }
+
+        .detail-row.active {
+            display: table-row;
+        }
+
+        .detail-container {
+            padding: 1.5rem;
+            border-left: 4px solid var(--primary-color);
+            margin: 0.5rem 1rem 1rem 3rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 0 12px 12px 0;
+        }
+
+        .question-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .question-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .question-title {
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            line-height: 1.4;
+        }
+
+        .status-badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .status-correct {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+
+        .status-incorrect {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+
+        .status-empty {
+            background: rgba(148, 163, 184, 0.2);
+            color: #94a3b8;
+            border: 1px solid #94a3b8;
+        }
+
+        .toggle-btn {
+            cursor: pointer;
+            color: var(--secondary-color);
+            transition: transform 0.3s;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .toggle-btn.active {
+            transform: rotate(90deg);
+        }
+
+        tr.main-row {
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -420,6 +504,15 @@
             }
         }
 
+        function toggleDetails(resultId) {
+            const detailRow = document.getElementById(`details-${resultId}`);
+            const toggleBtn = document.getElementById(`toggle-${resultId}`);
+            if (detailRow && toggleBtn) {
+                const isActive = detailRow.classList.toggle('active');
+                toggleBtn.classList.toggle('active', isActive);
+            }
+        }
+
         async function loadResults() {
             log('loadResults() llamada');
             const loadingDiv = document.getElementById('loading');
@@ -522,8 +615,11 @@
 
             if (filteredResults.length === 0) return;
 
-            filteredResults.forEach(result => {
+            filteredResults.forEach((result, index) => {
+                const resultId = result.id || `idx-${index}`;
                 const row = document.createElement('tr');
+                row.className = 'main-row';
+                row.onclick = () => toggleDetails(resultId);
 
                 const dateStr = result.created_at ? new Date(result.created_at).toLocaleString('es-ES', {
                     year: 'numeric', month: 'short', day: 'numeric',
@@ -540,13 +636,13 @@
                 // Aggressive metadata recovery
                 let recoveredEvaluator = result.evaluator_name || result.evaluator || '';
                 let recoveredPosition = result.target_position || result.position || '';
+                let exerciseResults = [];
 
                 if (result.details) {
                     try {
                         const details = typeof result.details === 'string' ? JSON.parse(result.details) : result.details;
 
                         // Handle both old format (Array) and new format (Object with .results)
-                        let exerciseResults = [];
                         if (Array.isArray(details)) {
                             exerciseResults = details;
                         } else if (details && typeof details === 'object') {
@@ -601,7 +697,7 @@
 
                 // Using textContent for user-provided data to prevent XSS
                 const tdDate = document.createElement('td');
-                tdDate.textContent = dateStr;
+                tdDate.innerHTML = `<i class="fas fa-chevron-right toggle-btn" id="toggle-${resultId}"></i> ${dateStr}`;
 
                 const tdCandidate = document.createElement('td');
                 const strongCandidate = document.createElement('strong');
@@ -639,6 +735,54 @@
                 row.appendChild(tdIncorrect);
 
                 tbody.appendChild(row);
+
+                // Create Detail Row
+                const detailRow = document.createElement('tr');
+                detailRow.className = 'detail-row';
+                detailRow.id = `details-${resultId}`;
+
+                const tdDetail = document.createElement('td');
+                tdDetail.colSpan = 8;
+
+                const detailContainer = document.createElement('div');
+                detailContainer.className = 'detail-container';
+
+                if (exerciseResults.length > 0) {
+                    const title = document.createElement('h4');
+                    title.style.color = 'var(--secondary-color)';
+                    title.style.marginBottom = '1rem';
+                    title.textContent = 'Detalle de Ejercicios:';
+                    detailContainer.appendChild(title);
+
+                    const questionList = document.createElement('div');
+                    questionList.className = 'question-list';
+
+                    exerciseResults.forEach(ex => {
+                        const item = document.createElement('div');
+                        item.className = 'question-item';
+
+                        const qTitle = document.createElement('span');
+                        qTitle.className = 'question-title';
+                        qTitle.textContent = ex.title || 'Ejercicio sin título';
+
+                        const statusBadge = document.createElement('span');
+                        const status = ex.status || 'empty';
+                        statusBadge.className = `status-badge status-${status}`;
+                        statusBadge.textContent = status === 'correct' ? 'Correcto' : (status === 'incorrect' ? 'Incorrecto' : 'Vacío');
+
+                        item.appendChild(qTitle);
+                        item.appendChild(statusBadge);
+                        questionList.appendChild(item);
+                    });
+
+                    detailContainer.appendChild(questionList);
+                } else {
+                    detailContainer.innerHTML = '<p style="color:#888; font-style:italic;">No hay detalles disponibles para este examen.</p>';
+                }
+
+                tdDetail.appendChild(detailContainer);
+                detailRow.appendChild(tdDetail);
+                tbody.appendChild(detailRow);
             });
         }
 
