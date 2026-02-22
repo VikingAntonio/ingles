@@ -841,6 +841,100 @@ Mensaje final`,
                         }
                     ]
                 }
+            },
+            {
+                id: 3,
+                title: "Nivel 3: Lógica y Álgebra de Datos",
+                lesson: {
+                    title: "Álgebra Booleana en Bases de Datos",
+                    content: `
+                        <h2>Lógica de Consultas</h2>
+                        <p>Las consultas SQL complejas se basan en la lógica booleana. Entender cómo combinar condiciones con AND (∧), OR (∨) y NOT (¬) es fundamental para filtrar datos con precisión.</p>
+                        <p><strong>Leyenda de Variables:</strong></p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; font-family: monospace;">
+                            <div>U: Usuario activo</div>
+                            <div>S: Suscripción activa</div>
+                            <div>P: Plan Premium</div>
+                            <div>A: Administrador</div>
+                            <div>R: Pago aprobado</div>
+                            <div>M: Monto > 100</div>
+                            <div>L: Sesión activa</div>
+                            <div>H: Sesión no vencida</div>
+                        </div>
+                        <ul style="margin-top: 1rem;">
+                            <li><strong>∧ (AND):</strong> Ambas condiciones deben cumplirse.</li>
+                            <li><strong>∨ (OR):</strong> Al menos una condición debe cumplirse.</li>
+                            <li><strong>¬ (NOT):</strong> Invierte el valor de la condición (Falso se vuelve Verdadero y viceversa).</li>
+                        </ul>
+                    `
+                },
+                game: {
+                    type: "mixed",
+                    title: "Desafío de Lógica Booleana",
+                    showSchemaDiagram: true,
+                    exercises: [
+                        {
+                            type: "quiz-item",
+                            question: "1️⃣ Obtener usuarios activos (U), con suscripción activa (S) y plan premium (P).",
+                            options: ["A) U ∧ S ∨ P", "B) U ∧ S ∧ P", "C) (U ∨ S) ∧ P", "D) U ∨ (S ∧ P)"],
+                            correct: 1
+                        },
+                        {
+                            type: "quiz-item",
+                            question: "2️⃣ Obtener usuarios admin (A) O activos (U) con suscripción activa (S).",
+                            options: ["A) (U ∧ S) ∨ A", "B) U ∧ (S ∨ A)", "C) U ∨ S ∨ A", "D) (U ∨ S) ∧ A"],
+                            correct: 0
+                        },
+                        {
+                            type: "quiz-item",
+                            question: "3️⃣ Obtener pagos aprobados (R), monto mayor a 100 (M) y usuario activo (U).",
+                            options: ["A) R ∧ (M ∨ U)", "B) (R ∧ M) ∧ U", "C) R ∨ M ∧ U", "D) (R ∨ M) ∧ U"],
+                            correct: 1
+                        },
+                        {
+                            type: "quiz-item",
+                            question: "4️⃣ Obtener sesiones activas (L), no vencidas (H) y usuario activo (U).",
+                            options: ["A) L ∧ H ∧ U", "B) L ∨ (H ∧ U)", "C) (L ∧ H) ∨ U", "D) L ∧ (H ∨ U)"],
+                            correct: 0
+                        },
+                        {
+                            type: "quiz-item",
+                            question: "5️⃣ Obtener usuarios activos (U) que sean premium (P) O admin (A).",
+                            options: ["A) U ∧ (P ∨ A)", "B) (U ∧ P) ∨ A", "C) U ∨ (P ∧ A)", "D) (U ∨ P) ∧ A"],
+                            correct: 0
+                        },
+                        {
+                            type: "quiz-item",
+                            question: "6️⃣ Obtener usuarios activos (U) con suscripción activa (S) y (premium (P) O admin (A)).",
+                            options: ["A) U ∧ S ∧ (P ∨ A)", "B) (U ∧ S ∧ P) ∨ A", "C) U ∧ (S ∨ P) ∧ A", "D) (U ∨ S) ∧ (P ∨ A)"],
+                            correct: 0
+                        },
+                        {
+                            type: "quiz-item",
+                            question: "7️⃣ Obtener pagos aprobados (R) y monto > 100 (M), o que el usuario sea admin (A) con suscripción activa (S).",
+                            options: ["A) (R ∧ M) ∨ (A ∧ S)", "B) R ∧ (M ∨ A) ∧ S", "C) (R ∨ M) ∧ (A ∧ S)", "D) R ∧ M ∧ A ∨ S"],
+                            correct: 0
+                        },
+                        {
+                            type: "quiz-item",
+                            question: "8️⃣ Obtener usuarios activos (U) con sesión activa (L) y no vencida (H), y además premium (P).",
+                            options: ["A) U ∧ L ∧ H ∧ P", "B) (U ∧ L) ∨ (H ∧ P)", "C) U ∧ (L ∨ H) ∧ P", "D) (U ∨ L) ∧ H ∧ P"],
+                            correct: 0
+                        },
+                        {
+                            type: "quiz-item",
+                            question: "9️⃣ Obtener usuarios que NO sean activos (¬U) pero tengan suscripción activa (S) y (premium (P) O admin (A)).",
+                            options: ["A) ¬U ∧ S ∧ (P ∨ A)", "B) ¬(U ∧ S) ∧ (P ∨ A)", "C) ¬U ∨ S ∧ (P ∨ A)", "D) (¬U ∧ S ∧ P) ∨ A"],
+                            correct: 0
+                        },
+                        {
+                            type: "quiz-item",
+                            question: "🔟 Obtener usuarios activos (U) con suscripción activa (S) y pagos aprobados (R) mayores a 100 (M), o que sean admin (A).",
+                            options: ["A) (U ∧ S ∧ R ∧ M) ∨ A", "B) U ∧ S ∧ (R ∨ M) ∨ A", "C) (U ∨ S) ∧ (R ∧ M) ∨ A", "D) U ∧ (S ∧ R ∧ M ∨ A)"],
+                            correct: 0
+                        }
+                    ]
+                }
             }
         ]
     }
@@ -1116,6 +1210,11 @@ function renderGame(game) {
              <div class="level-progress">
                <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
             </div>
+            ${game.showSchemaDiagram ? `
+                <div style="text-align: right; padding: 0 1rem; margin-bottom: 0.5rem;">
+                    <button id="btn-show-schema-global" class="game-btn small" style="background:var(--primary-color);">Ver tablas</button>
+                </div>
+            ` : ''}
             <!-- Global Floating Diagram Panel -->
             <div id="diagram-overlay-panel" class="floating-diagram-panel hidden">
                 <div class="panel-header" id="diagram-header">
@@ -1139,6 +1238,14 @@ function renderGame(game) {
 
     // Initialize Diagram Panel Once
     setupGlobalDiagramPanel();
+
+    const showBtnGlobal = document.getElementById('btn-show-schema-global');
+    if (showBtnGlobal) {
+        showBtnGlobal.onclick = () => {
+            const panel = document.getElementById('diagram-overlay-panel');
+            if (panel) panel.classList.remove('hidden');
+        };
+    }
 
     const container = document.getElementById('active-game-area');
     const exercises = game.exercises || [game];
@@ -1643,7 +1750,7 @@ function setupMixedGame(game, container) {
         exerciseArea.innerHTML = ` 
             <div class="exercise-header fade-in"> 
                 <h3>Ejercicio ${currentExerciseIndex + 1}/${game.exercises.length}</h3> 
-                <h2>${exercise.title}</h2> 
+                <h2>${exercise.title || exercise.question || 'Ejercicio'}</h2>
                 ${exercise.instruction ? `<p>${exercise.instruction}</p>` : ''} 
             </div> 
             <div id="exercise-content" class="fade-in"></div> 
@@ -2741,7 +2848,6 @@ function setupBuilder(game, container, onComplete) {
         container.innerHTML = ` 
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h3>Misión: ${challenge.goal}</h3>
-                ${game.showSchemaDiagram ? '<button id="btn-show-schema" class="game-btn small" style="background:var(--primary-color);">👁 Ver Esquema</button>' : ''}
             </div>
 
             <div id="query-display" style="background:#000; color:#0f0; padding:1rem; margin:1rem 0; min-height:3rem; font-family:monospace; border-radius:4px;"></div> 
@@ -2763,15 +2869,6 @@ function setupBuilder(game, container, onComplete) {
                 updateDisplay();
             };
         });
-
-        // Diagram Panel logic for this exercise
-        const showBtn = document.getElementById('btn-show-schema');
-        if (showBtn) {
-            showBtn.onclick = () => {
-                const panel = document.getElementById('diagram-overlay-panel');
-                if (panel) panel.classList.remove('hidden');
-            };
-        }
     }
 
     window.updateDisplay = () => {

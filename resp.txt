@@ -23,3 +23,15 @@ Nivel 2: Enterprise Schema
 8. SELECT planes.nombre_plan, SUM(planes.precio) FROM suscripciones JOIN planes ON suscripciones.id_plan = planes.id_plan WHERE suscripciones.estado = 'ACTIVA' GROUP BY planes.nombre_plan
 9. SELECT * FROM usuarios WHERE email LIKE '%@gmail.com'
 10. SELECT * FROM planes ORDER BY precio DESC LIMIT 3
+
+Nivel 3: Lógica y Álgebra de Datos
+1. B
+2. A
+3. B
+4. A
+5. A
+6. A
+7. A
+8. A
+9. A
+10. A
