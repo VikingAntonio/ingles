@@ -308,7 +308,7 @@
 
         .question-list {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
             gap: 1rem;
         }
 
@@ -548,12 +548,20 @@
             }, 8000);
 
             try {
-                log('Enviando consulta a la tabla "exam_results"...');
-                // Intentamos primero con created_at, luego con id, luego sin orden
+                log('Enviando consulta a la tabla "exam_results" con join...');
+                // Intentamos primero con join y created_at
                 let result = await _supabaseClient
                     .from('exam_results')
-                    .select('*')
+                    .select('*, exam_answers(*)')
                     .order('created_at', { ascending: false });
+
+                if (result.error) {
+                    log('Error con join, reintentando sin join: ' + result.error.message);
+                    result = await _supabaseClient
+                        .from('exam_results')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                }
 
                 if (result.error) {
                     log('Error con created_at, reintentando con id: ' + result.error.message);
@@ -638,7 +646,11 @@
                 let recoveredPosition = result.target_position || result.position || '';
                 let exerciseResults = [];
 
-                if (result.details) {
+                // --- NEW: Use relational data if available ---
+                if (result.exam_answers && Array.isArray(result.exam_answers) && result.exam_answers.length > 0) {
+                    exerciseResults = result.exam_answers.sort((a, b) => a.question_number - b.question_number);
+                } else if (result.details) {
+                    // Fallback to JSON details
                     try {
                         const details = typeof result.details === 'string' ? JSON.parse(result.details) : result.details;
 
@@ -751,27 +763,42 @@
                     const title = document.createElement('h4');
                     title.style.color = 'var(--secondary-color)';
                     title.style.marginBottom = '1rem';
-                    title.textContent = 'Detalle de Ejercicios:';
+                    title.textContent = 'Resultado por Pregunta:';
                     detailContainer.appendChild(title);
 
                     const questionList = document.createElement('div');
                     questionList.className = 'question-list';
 
-                    exerciseResults.forEach(ex => {
+                    exerciseResults.forEach((ex, idx) => {
                         const item = document.createElement('div');
                         item.className = 'question-item';
+                        item.style.flexDirection = 'column';
+                        item.style.padding = '0.8rem';
+                        item.style.textAlign = 'center';
 
-                        const qTitle = document.createElement('span');
-                        qTitle.className = 'question-title';
-                        qTitle.textContent = ex.title || 'Ejercicio sin título';
+                        const qNum = document.createElement('span');
+                        qNum.className = 'question-title';
+                        qNum.style.fontWeight = 'bold';
+                        qNum.style.marginBottom = '0.5rem';
+                        qNum.textContent = `P${ex.question_number || (idx + 1)}`;
 
-                        const statusBadge = document.createElement('span');
+                        const statusIcon = document.createElement('i');
                         const status = ex.status || 'empty';
-                        statusBadge.className = `status-badge status-${status}`;
-                        statusBadge.textContent = status === 'correct' ? 'Correcto' : (status === 'incorrect' ? 'Incorrecto' : 'Vacío');
 
-                        item.appendChild(qTitle);
-                        item.appendChild(statusBadge);
+                        if (status === 'correct') {
+                            statusIcon.className = 'fas fa-check-circle';
+                            statusIcon.style.color = '#10b981';
+                        } else if (status === 'incorrect') {
+                            statusIcon.className = 'fas fa-times-circle';
+                            statusIcon.style.color = '#ef4444';
+                        } else {
+                            statusIcon.className = 'fas fa-minus-circle';
+                            statusIcon.style.color = '#94a3b8';
+                        }
+                        statusIcon.style.fontSize = '1.2rem';
+
+                        item.appendChild(qNum);
+                        item.appendChild(statusIcon);
                         questionList.appendChild(item);
                     });
 
