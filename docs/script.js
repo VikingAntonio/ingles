@@ -771,7 +771,7 @@ Mensaje final`,
             },
             {
                 id: 2,
-                title: "Nivel 2: Enterprise Schema",
+                title: "SQL queries",
                 lesson: {
                     title: "Consultas Avanzadas y Joins",
                     content: `
@@ -844,9 +844,9 @@ Mensaje final`,
             },
             {
                 id: 3,
-                title: "Nivel 3: Lógica y Álgebra de Datos",
+                title: "Algebra Booleana",
                 lesson: {
-                    title: "Álgebra Booleana en Bases de Datos",
+                    title: "Logica y Algebra de datos",
                     content: `
                         <h2>Lógica de Consultas</h2>
                         <p>Las consultas SQL complejas se basan en la lógica booleana. Entender cómo combinar condiciones con AND (∧), OR (∨) y NOT (¬) es fundamental para filtrar datos con precisión.</p>
