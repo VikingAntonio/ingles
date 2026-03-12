@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadowing Lab - Menutech English</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .shadowing-layout {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 1000px) {
+            .shadowing-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--primary-color);
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            background: rgba(124, 77, 255, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 2rem;
+        }
+
+        .drop-zone.drag-over {
+            background: rgba(124, 77, 255, 0.2);
+            transform: scale(1.02);
+            border-style: solid;
+        }
+
+        .drop-zone i {
+            font-size: 3rem;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+        }
+
+        .text-display {
+            background: #0f172a;
+            padding: 2rem;
+            border-radius: 16px;
+            min-height: 200px;
+            font-size: 1.5rem;
+            line-height: 1.8;
+            color: #4b5563;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .word {
+            display: inline-block;
+            margin-right: 0.3rem;
+            transition: color 0.3s ease, transform 0.2s ease;
+        }
+
+        .word.active {
+            color: var(--secondary-color);
+            text-shadow: 0 0 8px var(--secondary-color);
+            transform: scale(1.1);
+        }
+
+        .word.spoken {
+            color: var(--success);
+        }
+
+        .controls-panel {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            height: fit-content;
+        }
+
+        .audio-preview {
+            width: 100%;
+            margin-top: 1rem;
+            height: 40px;
+        }
+
+        .results-section {
+            margin-top: 4rem;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .results-table th, .results-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .results-table th {
+            color: var(--secondary-color);
+            background: rgba(124, 77, 255, 0.1);
+        }
+
+        .play-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .btn-record {
+            background: var(--error);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(255, 23, 68, 0.3);
+        }
+
+        .btn-record.recording {
+            animation: pulse-red 1.5s infinite;
+        }
+
+        .btn-record:disabled {
+            background: #4b5563;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .status-pill {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .status-idle { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="https://menutech.services/assets/img/logomt.png" alt="Menutech Logo" class="main-logo">
+        </div>
+    </header>
+
+    <main>
+        <nav class="app-nav">
+            <button onclick="window.location.href='index.html'">⬅ Menú Principal</button>
+            <div class="nav-title">English Shadowing Lab</div>
+            <div style="width: 80px;"></div>
+        </nav>
+
+        <div class="hero">
+            <h1>Practica tu Pronunciación</h1>
+            <p>Carga un texto o audio para comenzar tu sesión de shadowing.</p>
+        </div>
+
+        <div id="setup-view">
+            <div class="drop-zone" id="drop-zone">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h2>Arrastra y suelta tu archivo</h2>
+                <p>Soporta .txt para texto o .mp3/.wav para audio</p>
+                <input type="file" id="file-input" hidden accept=".txt,audio/*">
+            </div>
+
+            <div id="text-input-panel" class="hidden fade-in" style="max-width: 800px; margin: 0 auto; background: var(--card-bg); padding: 2rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                <h3 style="margin-bottom: 1rem; color: var(--secondary-color);">Carga el texto para el audio</h3>
+                <textarea id="manual-text-input" placeholder="Pega aquí el texto que quieres practicar..."
+                    style="width: 100%; height: 200px; padding: 1rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(124,77,255,0.3); border-radius: 12px; color: white; font-family: 'Poppins', sans-serif; margin-bottom: 1.5rem;"></textarea>
+                <button id="btn-start-manual" class="game-btn" style="width: 100%;">Comenzar Shadowing</button>
+            </div>
+        </div>
+
+        <div id="shadowing-view" class="hidden fade-in">
+            <div class="shadowing-layout">
+                <div class="main-workspace">
+                    <div class="text-display" id="text-display">
+                        <!-- El texto se inyectará aquí palabra por palabra -->
+                        <div style="color: #64748b; text-align: center; margin-top: 4rem;">
+                            Esperando contenido...
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 2rem;">
+                        <audio id="source-audio" class="audio-preview" controls></audio>
+                    </div>
+                </div>
+
+                <div class="controls-panel">
+                    <div style="text-align: center;">
+                        <span id="status-badge" class="status-pill status-idle">LISTO</span>
+                    </div>
+
+                    <button id="btn-record" class="btn-record">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+
+                    <p style="text-align: center; font-size: 0.9rem; color: var(--text-secondary);">
+                        Presiona para empezar a hablar
+                    </p>
+
+                    <div style="margin-top: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Tu Nombre:</label>
+                        <input type="text" id="user-name" placeholder="Escribe tu nombre..."
+                            style="width: 100%; padding: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(124,77,255,0.3); border-radius: 8px; color: white;">
+                    </div>
+
+                    <button id="btn-save" class="game-btn" disabled style="width: 100%;">
+                        <i class="fas fa-save"></i> Guardar Sesión
+                    </button>
+
+                    <button id="btn-reset" class="game-btn secondary" style="width: 100%;">
+                        <i class="fas fa-redo"></i> Cargar Otro
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <section class="results-section">
+            <div class="dashboard-header" style="margin-bottom: 1.5rem;">
+                <h2><i class="fas fa-history"></i> Mis Sesiones</h2>
+            </div>
+
+            <div class="results-table-container">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Candidato</th>
+                            <th>Puntuación</th>
+                            <th>Original</th>
+                            <th>Mi Audio</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessions-body">
+                        <!-- Sesiones inyectadas aquí -->
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #888;">Cargando sesiones...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; <span id="current-year"></span> Menutech.</p>
+    </footer>
+
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // Configurations
+        const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/vikingdevBdd/upload";
+        const CLOUDINARY_PRESET = "de3n9pg8x";
+
+        const SUPABASE_URL = 'https://ojpyfjgkffmzwvukjagf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcHlmamdrZmZtend2dWtqYWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDIwMzYsImV4cCI6MjA3OTcxODAzNn0.dlVYmoMumBse_O1PLBx0FeNITqY4YktefD6l_uonSgo';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // State
+        let currentText = "";
+        let originalFileUrl = "";
+        let userAudioBlob = null;
+        let paragraphs = [];
+        let currentParagraphIndex = 0;
+        let words = [];
+        let currentWordIndex = 0;
+        let recognition = null;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let pendingAudioUrl = null;
+
+        // DOM Elements
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const textInputPanel = document.getElementById('text-input-panel');
+        const manualTextInput = document.getElementById('manual-text-input');
+        const btnStartManual = document.getElementById('btn-start-manual');
+        const setupView = document.getElementById('setup-view');
+        const shadowingView = document.getElementById('shadowing-view');
+        const textDisplay = document.getElementById('text-display');
+        const sourceAudio = document.getElementById('source-audio');
+        const btnRecord = document.getElementById('btn-record');
+        const btnSave = document.getElementById('btn-save');
+        const btnReset = document.getElementById('btn-reset');
+        const userNameInput = document.getElementById('user-name');
+        const statusBadge = document.getElementById('status-badge');
+        const sessionsBody = document.getElementById('sessions-body');
+
+        // Initialization
+        init();
+
+        async function init() {
+            setupDragAndDrop();
+            setupSpeechRecognition();
+            loadSessions();
+        }
+
+        // --- Drag and Drop Logic ---
+        function setupDragAndDrop() {
+            dropZone.onclick = () => fileInput.click();
+
+            dropZone.ondragover = (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            };
+
+            dropZone.ondragleave = () => dropZone.classList.remove('drag-over');
+
+            dropZone.ondrop = (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                if (e.dataTransfer.files.length) {
+                    handleFile(e.dataTransfer.files[0]);
+                }
+            };
+
+            fileInput.onchange = (e) => {
+                if (e.target.files.length) {
+                    handleFile(e.target.files[0]);
+                }
+            };
+        }
+
+        async function handleFile(file) {
+            console.log("Handling file:", file.name, file.type);
+
+            // Upload to Cloudinary immediately
+            try {
+                originalFileUrl = await uploadToCloudinary(file);
+                console.log("Uploaded original to Cloudinary:", originalFileUrl);
+            } catch (err) {
+                alert("Error subiendo archivo a Cloudinary");
+                return;
+            }
+
+            if (file.type === "text/plain") {
+                const text = await file.text();
+                setupShadowing(text, null);
+            } else if (file.type.startsWith("audio/")) {
+                pendingAudioUrl = URL.createObjectURL(file);
+                dropZone.classList.add('hidden');
+                textInputPanel.classList.remove('hidden');
+            }
+        }
+
+        btnStartManual.onclick = () => {
+            const text = manualTextInput.value.trim();
+            if (!text) {
+                alert("Por favor ingresa un texto.");
+                return;
+            }
+            setupShadowing(text, pendingAudioUrl);
+        };
+
+        function setupShadowing(text, audioUrl) {
+            currentText = text;
+            // Split by double newline or any significant break for paragraphs
+            paragraphs = text.split(/\n\s*\n/).filter(p => p.trim() !== "");
+            currentParagraphIndex = 0;
+
+            renderCurrentParagraph();
+
+            if (audioUrl) {
+                sourceAudio.src = audioUrl;
+                sourceAudio.classList.remove('hidden');
+            } else {
+                sourceAudio.classList.add('hidden');
+            }
+
+            setupView.classList.add('hidden');
+            shadowingView.classList.remove('hidden');
+            btnSave.disabled = true;
+        }
+
+        function renderCurrentParagraph() {
+            const pText = paragraphs[currentParagraphIndex];
+            words = pText.split(/\s+/);
+            currentWordIndex = 0;
+
+            textDisplay.innerHTML = `
+                <div style="font-size: 0.9rem, color: var(--secondary-color); margin-bottom: 1rem;">
+                    Párrafo ${currentParagraphIndex + 1} de ${paragraphs.length}
+                </div>
+                <div>
+                    ${words.map((w, i) => `<span class="word" id="word-${i}">${w}</span>`).join(' ')}
+                </div>
+                ${currentParagraphIndex < paragraphs.length - 1 ? `
+                    <div style="margin-top: 2rem; font-style: italic; color: #4b5563;">
+                        Próximo: ${paragraphs[currentParagraphIndex + 1].substring(0, 50)}...
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        // --- Cloudinary Upload ---
+        async function uploadToCloudinary(fileOrBlob) {
+            const formData = new FormData();
+            formData.append("file", fileOrBlob);
+            formData.append("upload_preset", CLOUDINARY_PRESET);
+
+            const res = await fetch(CLOUDINARY_URL, {
+                method: "POST",
+                body: formData
+            });
+
+            if (!res.ok) throw new Error("Cloudinary upload failed");
+            const data = await res.json();
+            return data.secure_url;
+        }
+
+        // --- Speech Recognition & Shadowing ---
+        function setupSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("Tu navegador no soporta reconocimiento de voz.");
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        processTranscript(event.results[i][0].transcript);
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+            };
+
+            recognition.onerror = (e) => console.error("Recognition error:", e);
+        }
+
+        function processTranscript(transcript) {
+            console.log("Final Transcript:", transcript);
+            const userWords = transcript.toLowerCase().split(/\s+/);
+
+            userWords.forEach(uWord => {
+                if (currentWordIndex < words.length) {
+                    const targetWord = words[currentWordIndex].toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const cleanUserWord = uWord.replace(/[^a-z0-9]/g, '');
+
+                    if (cleanUserWord === targetWord) {
+                        const wordEl = document.getElementById(`word-${currentWordIndex}`);
+                        if (wordEl) {
+                            wordEl.classList.add('spoken');
+                            wordEl.classList.remove('active');
+                        }
+                        currentWordIndex++;
+                        if (currentWordIndex < words.length) {
+                            const nextWordEl = document.getElementById(`word-${currentWordIndex}`);
+                            if (nextWordEl) nextWordEl.classList.add('active');
+                        }
+                    }
+                }
+            });
+
+            if (currentWordIndex >= words.length) {
+                if (currentParagraphIndex < paragraphs.length - 1) {
+                    // Paragraph finished, wait 1s then next
+                    setTimeout(() => {
+                        currentParagraphIndex++;
+                        renderCurrentParagraph();
+                        const firstWord = document.getElementById('word-0');
+                        if (firstWord) firstWord.classList.add('active');
+                    }, 1000);
+                } else {
+                    stopRecording();
+                }
+            }
+        }
+
+        btnRecord.onclick = () => {
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        };
+
+        async function startRecording() {
+            isRecording = true;
+            btnRecord.classList.add('recording');
+            statusBadge.textContent = "GRABANDO";
+            statusBadge.className = "status-pill status-active";
+
+            currentWordIndex = 0;
+            // Highlight first word
+            document.querySelectorAll('.word').forEach(el => el.classList.remove('spoken', 'active'));
+            const firstWord = document.getElementById('word-0');
+            if (firstWord) firstWord.classList.add('active');
+
+            recognition.start();
+
+            // Start Audio capture
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                userAudioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                btnSave.disabled = false;
+            };
+
+            mediaRecorder.start();
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            btnRecord.classList.remove('recording');
+            statusBadge.textContent = "FINALIZADO";
+            statusBadge.className = "status-pill status-idle";
+
+            if (recognition) recognition.stop();
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(t => t.stop());
+            }
+        }
+
+        // --- Supabase Integration ---
+        btnSave.onclick = async () => {
+            const name = userNameInput.value.trim() || "Anónimo";
+            btnSave.disabled = true;
+            btnSave.textContent = "Guardando...";
+
+            try {
+                // 1. Upload user audio to Cloudinary
+                const userAudioUrl = await uploadToCloudinary(userAudioBlob);
+
+                // 2. Save to Supabase
+                // Calculate total progress across all paragraphs
+                const totalWords = currentText.split(/\s+/).length;
+                // Since currentWordIndex is per paragraph, we'd need more complex tracking for perfect score
+                // But as a simplification, if they finished all paragraphs, it's 100%.
+                const score = (currentParagraphIndex >= paragraphs.length - 1 && currentWordIndex >= words.length) ? 100 : 50;
+
+                const { data, error } = await supabase
+                    .from('exam_results')
+                    .insert([{
+                        candidate_name: name,
+                        exam_type: 'LearnEnglish',
+                        score_percentage: score,
+                        audio_url: userAudioUrl,
+                        details: JSON.stringify({
+                            original_text: currentText,
+                            original_file_url: originalFileUrl,
+                            user_audio_url: userAudioUrl,
+                            date: new Date().toISOString()
+                        })
+                    }]);
+
+                if (error) throw error;
+
+                alert("Sesión guardada con éxito!");
+                location.reload();
+            } catch (err) {
+                console.error(err);
+                alert("Error al guardar: " + err.message);
+                btnSave.disabled = false;
+                btnSave.textContent = "Guardar Sesión";
+            }
+        };
+
+        btnReset.onclick = () => location.reload();
+
+        async function loadSessions() {
+            const { data, error } = await supabase
+                .from('exam_results')
+                .select('*')
+                .eq('exam_type', 'LearnEnglish')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            sessionsBody.innerHTML = data.map(s => {
+                const details = JSON.parse(s.details || '{}');
+                return `
+                    <tr>
+                        <td>${new Date(s.created_at).toLocaleDateString()}</td>
+                        <td>${s.candidate_name}</td>
+                        <td><span class="status-pill status-active">${s.score_percentage}%</span></td>
+                        <td><a href="${details.original_file_url}" target="_blank" class="play-btn">Ver Original</a></td>
+                        <td><audio src="${s.audio_url}" controls style="height:30px;"></audio></td>
+                    </tr>
+                `;
+            }).join('') || '<tr><td colspan="5" style="text-align: center;">No hay sesiones grabadas.</td></tr>';
+        }
+    </script>
+</body>
+</html>
