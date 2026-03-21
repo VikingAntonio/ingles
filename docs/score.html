@@ -404,9 +404,7 @@
             <input type="text" id="search-name" placeholder="🔍 Buscar por nombre...">
             <select id="filter-exam">
                 <option value="">Todos los exámenes</option>
-                <option value="programming">Programación</option>
-                <option value="english">Inglés</option>
-                <option value="database">Bases de Datos</option>
+                <!-- Opciones se cargarán dinámicamente -->
             </select>
             <select id="filter-score">
                 <option value="">Todas las puntuaciones</option>
@@ -513,6 +511,20 @@
             }
         }
 
+        async function loadSubjectsForFilter() {
+            try {
+                const { data, error } = await _supabaseClient.from('subjects').select('slug, title');
+                if (error) throw error;
+                const select = document.getElementById('filter-exam');
+                data.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.slug;
+                    opt.textContent = s.title;
+                    select.appendChild(opt);
+                });
+            } catch (e) { log('Error cargando materias para filtro: ' + e.message); }
+        }
+
         async function loadResults() {
             log('loadResults() llamada');
             const loadingDiv = document.getElementById('loading');
@@ -586,6 +598,8 @@
                 log('Datos recibidos. Filas: ' + (result.data ? result.data.length : 0));
                 clearTimeout(timeoutId);
                 allResults = result.data || [];
+
+                await loadSubjectsForFilter();
                 filteredResults = allResults;
 
                 renderResults();
