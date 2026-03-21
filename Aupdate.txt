@@ -1,0 +1,74 @@
+-- Habilitar extensión para UUIDs si no está activa
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 1. TABLA DE MATERIAS (SUBJECTS)
+CREATE TABLE IF NOT EXISTS subjects (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    slug TEXT UNIQUE NOT NULL, -- Ej: 'programming', 'english'
+    title TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 2. TABLA DE NIVELES (LEVELS)
+CREATE TABLE IF NOT EXISTS levels (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    subject_id UUID REFERENCES subjects(id) ON DELETE CASCADE,
+    level_number INTEGER NOT NULL, -- El "id" numérico que usaba el sistema
+    title TEXT NOT NULL,
+    lesson_title TEXT,
+    lesson_content TEXT,
+    game_title TEXT,
+    game_type TEXT DEFAULT 'mixed',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(subject_id, level_number)
+);
+
+-- 3. TABLA DE PREGUNTAS (QUESTIONS)
+CREATE TABLE IF NOT EXISTS questions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    level_id UUID REFERENCES levels(id) ON DELETE CASCADE,
+    type TEXT NOT NULL, -- quiz-item, speech-practice, etc.
+    title TEXT,
+    question_text TEXT,
+    instruction TEXT,
+    audio_url TEXT,
+    correct_answer TEXT, -- Índice o texto de respuesta
+    options JSONB, -- Array de opciones para Quiz/Listening
+    data JSONB, -- Datos extra: bloques SQL, pares match, líneas sorter, solución flowchart
+    order_index INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 4. TABLA DE RESULTADOS DE EXÁMENES (Ya existente, reforzada)
+CREATE TABLE IF NOT EXISTS exam_results (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    candidate_name TEXT,
+    evaluator_name TEXT,
+    target_position TEXT,
+    exam_type TEXT, -- Referencia al slug de subject
+    score_percentage INTEGER,
+    correct_count INTEGER,
+    incorrect_count INTEGER,
+    empty_count INTEGER DEFAULT 0,
+    details JSONB, -- Log detallado de la sesión
+    audio_url TEXT, -- Para grabaciones de voz del usuario
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 5. TABLA DE RESPUESTAS INDIVIDUALES (Relacional)
+CREATE TABLE IF NOT EXISTS exam_answers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    exam_id UUID REFERENCES exam_results(id) ON DELETE CASCADE,
+    question_number INTEGER,
+    status TEXT, -- 'correct', 'incorrect', 'empty'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ÍNDICES PARA RENDIMIENTO
+CREATE INDEX IF NOT EXISTS idx_levels_subject ON levels(subject_id);
+CREATE INDEX IF NOT EXISTS idx_questions_level ON questions(level_id);
+CREATE INDEX IF NOT EXISTS idx_exam_answers_exam ON exam_answers(exam_id);
+
+-- COMENTARIOS DE AYUDA
+COMMENT ON COLUMN questions.data IS 'Almacena configuraciones específicas: {"blocks": [...], "pairs": [...], "lines": [...], "solution": {...}}';
