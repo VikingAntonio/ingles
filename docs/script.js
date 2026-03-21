@@ -1,4 +1,4 @@
-const courseData = {
+let courseData = {
     programming: {
         title: "Programación (JavaScript)",
         levels: [
@@ -959,20 +959,80 @@ const levelSubjectTitle = document.getElementById('level-subject-title');
 const backBtn = document.getElementById('btn-back');
 const homeLevelBtn = document.getElementById('btn-home-level');
 const navBtns = document.querySelectorAll('.nav-btn');
-const cards = document.querySelectorAll('.card');
+let cards = document.querySelectorAll('.card');
+
+// Load custom data if exists
+if (localStorage.getItem('menutech_course_data')) {
+    try {
+        courseData = JSON.parse(localStorage.getItem('menutech_course_data'));
+        console.log('✅ Custom course data loaded from localStorage');
+    } catch (e) {
+        console.error('❌ Error parsing custom course data:', e);
+    }
+}
 
 // Modal Elements 
 const modal = document.getElementById('level-modal');
 const modalScore = document.getElementById('modal-score-display');
 const btnBackLevels = document.getElementById('btn-back-levels');
 
-// Event Listeners
-cards.forEach(card => {
-    card.addEventListener('click', () => {
-        const subject = card.getAttribute('data-subject');
-        if (subject) openSubject(subject);
+// Initialize Home Cards
+function initHomeCards() {
+    const container = document.querySelector('.cards-container');
+    if (!container) return;
+
+    // We don't want to wipe the Hardcoded static cards if we are just starting,
+    // but the request implies we can "add new subjects".
+    // Let's make it dynamic.
+
+    // 1. Get existing hardcoded subjects
+    const hardcodedSubjects = ['programming', 'english', 'database'];
+
+    // 2. Identify custom subjects in courseData
+    const allSubjects = Object.keys(courseData);
+    const customSubjects = allSubjects.filter(s => !hardcodedSubjects.includes(s));
+
+    // 3. If there are custom subjects, we should probably render them
+    customSubjects.forEach(subjectKey => {
+        const subject = courseData[subjectKey];
+        // Check if card already exists (though it shouldn't if it's custom)
+        if (!document.querySelector(`.card[data-subject="${subjectKey}"]`)) {
+            const card = document.createElement('div');
+            card.className = 'card fade-in';
+            card.setAttribute('data-subject', subjectKey);
+
+            // Pick an icon based on name or default
+            let icon = 'fa-book';
+            if (subjectKey.includes('code')) icon = 'fa-code';
+            if (subjectKey.includes('test')) icon = 'fa-vial';
+
+            card.innerHTML = `
+                <div class="icon"><i class="fas ${icon}"></i></div>
+                <h2>${subject.title}</h2>
+                <p>${subject.description || 'Nuevo curso disponible.'}</p>
+            `;
+            // Insert before the Shadowing Lab card if possible
+            const shadowingCard = container.querySelector('div[onclick*="learnEnglish.html"]');
+            if (shadowingCard) {
+                container.insertBefore(card, shadowingCard);
+            } else {
+                container.appendChild(card);
+            }
+        }
     });
-});
+
+    // Re-bind click events to all cards including new ones
+    cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        const subject = card.getAttribute('data-subject');
+        if (subject && !card.onclick) {
+            card.onclick = () => openSubject(subject);
+        }
+    });
+}
+
+// Call on load
+document.addEventListener('DOMContentLoaded', initHomeCards);
 
 if (backBtn) {
     backBtn.addEventListener('click', () => {
@@ -2776,31 +2836,70 @@ function setupListeningPractice(game, container, onComplete) {
             return;
         }
 
-        if (synth.speaking) return; // Already playing
+        // --- NEW: Handle uploaded audio_url if available ---
+        if (game.audio_url) {
+            const audio = new Audio(game.audio_url);
 
-        const utterance = new SpeechSynthesisUtterance(script);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.9;
-
-        utterance.onstart = () => {
             btnPlay.classList.add('recording');
             visualizer.classList.add('active');
-        };
 
-        utterance.onend = () => {
-            btnPlay.classList.remove('recording');
-            visualizer.classList.remove('active');
-            playsLeft--;
-            playsCounter.textContent = playsLeft;
+            audio.onended = () => {
+                btnPlay.classList.remove('recording');
+                visualizer.classList.remove('active');
+                playsLeft--;
+                playsCounter.textContent = playsLeft;
 
-            if (playsLeft === 0) {
-                btnPlay.disabled = true;
-                btnPlay.style.opacity = '0.5';
-                btnPlay.style.cursor = 'not-allowed';
-            }
-        };
+                if (playsLeft === 0) {
+                    btnPlay.disabled = true;
+                    btnPlay.style.opacity = '0.5';
+                    btnPlay.style.cursor = 'not-allowed';
+                }
+            };
 
-        synth.speak(utterance);
+            audio.onerror = (e) => {
+                console.error("Audio Load Error:", e);
+                feedback.textContent = "Error al cargar el audio.";
+                btnPlay.classList.remove('recording');
+                visualizer.classList.remove('active');
+            };
+
+            audio.play().catch(err => {
+                console.error("Audio Play Error:", err);
+                // Fallback to TTS if audio fails
+                playTTS();
+            });
+            return;
+        }
+
+        playTTS();
+
+        function playTTS() {
+            if (synth.speaking) return; // Already playing
+
+            const utterance = new SpeechSynthesisUtterance(script);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9;
+
+            utterance.onstart = () => {
+                btnPlay.classList.add('recording');
+                visualizer.classList.add('active');
+            };
+
+            utterance.onend = () => {
+                btnPlay.classList.remove('recording');
+                visualizer.classList.remove('active');
+                playsLeft--;
+                playsCounter.textContent = playsLeft;
+
+                if (playsLeft === 0) {
+                    btnPlay.disabled = true;
+                    btnPlay.style.opacity = '0.5';
+                    btnPlay.style.cursor = 'not-allowed';
+                }
+            };
+
+            synth.speak(utterance);
+        }
     };
 
     optionButtons.forEach((btn, idx) => {
