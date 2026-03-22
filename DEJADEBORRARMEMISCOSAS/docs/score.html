@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Resultados - Menutech</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .dashboard-header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(124, 77, 255, 0.3);
+        }
+
+        .dashboard-header h1 {
+            color: var(--secondary-color);
+            margin: 0 0 0.5rem 0;
+            font-size: 2.5rem;
+        }
+
+        .dashboard-header p {
+            color: #aaa;
+            margin: 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(124, 77, 255, 0.2);
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-color);
+            box-shadow: 0 10px 30px rgba(124, 77, 255, 0.3);
+        }
+
+        .stat-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .label {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .filters {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(124, 77, 255, 0.2);
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filters input,
+        .filters select {
+            background: #000;
+            border: 1px solid rgba(124, 77, 255, 0.3);
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filters select option {
+            background: #000;
+            color: #fff;
+        }
+
+        .filters input::placeholder {
+            color: #888;
+        }
+
+        .results-table {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(124, 77, 255, 0.2);
+            min-height: 200px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: rgba(124, 77, 255, 0.2);
+        }
+
+        th {
+            padding: 1.2rem;
+            text-align: left;
+            color: var(--secondary-color);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 1.2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ccc;
+        }
+
+        tbody tr {
+            transition: all 0.3s;
+        }
+
+        tbody tr:hover {
+            background: rgba(124, 77, 255, 0.1);
+        }
+
+        .dashboard-score-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            position: relative !important; /* Override style.css */
+            transform: scale(1) !important; /* Override style.css */
+            width: auto !important; /* Override style.css */
+            height: auto !important; /* Override style.css */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .score-excellent {
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+            color: white !important;
+            border: none !important;
+        }
+
+        .score-good {
+            background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+            color: white !important;
+            border: none !important;
+        }
+
+        .score-fair {
+            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+            color: white !important;
+            border: none !important;
+        }
+
+        .score-poor {
+            background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+            color: white !important;
+            border: none !important;
+        }
+
+        .exam-type-badge {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .exam-programming {
+            background: rgba(124, 77, 255, 0.2);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+
+        .exam-english {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid #3b82f6;
+        }
+
+        .exam-database {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #aaa;
+            font-size: 1.2rem;
+        }
+
+        .loading i {
+            font-size: 3rem;
+            color: var(--primary-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: #aaa;
+        }
+
+        .no-results i {
+            font-size: 4rem;
+            color: rgba(124, 77, 255, 0.3);
+            margin-bottom: 1rem;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--primary-color), #6200ea);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 8px 20px rgba(124, 77, 255, 0.4);
+            margin-bottom: 2rem;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(124, 77, 255, 0.6);
+        }
+
+        .back-btn i {
+            margin-right: 0.5rem;
+        }
+
+        #debug-log {
+            background: #000;
+            color: #0f0;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <header style="padding: 1rem 2rem; margin-bottom: 2rem; background: rgba(11, 17, 33, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+        <div class="logo">
+            <img src="https://menutech.services/assets/img/logomt.png" alt="Menutech Logo" class="main-logo">
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <a href="index.html" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Volver al Inicio
+        </a>
+
+        <div class="dashboard-header">
+            <h1><i class="fas fa-chart-line"></i> Dashboard de Resultados</h1>
+            <p>Visualiza todos los resultados de exámenes guardados en Supabase</p>
+            <div style="margin-top: 1rem; display: flex; gap: 10px;">
+                <button onclick="location.reload()" class="back-btn" style="padding: 0.5rem 1rem; margin: 0; font-size: 0.8rem;">
+                    <i class="fas fa-sync"></i> Recargar
+                </button>
+                <button onclick="toggleDebug()" class="back-btn secondary" style="padding: 0.5rem 1rem; margin: 0; font-size: 0.8rem; background: #334155;">
+                    <i class="fas fa-bug"></i> Debug
+                </button>
+            </div>
+        </div>
+
+
+        <div class="filters">
+            <input type="text" id="search-name" placeholder="🔍 Buscar por nombre...">
+            <select id="filter-exam">
+                <option value="">Todos los exámenes</option>
+                <option value="programming">Programación</option>
+                <option value="english">Inglés</option>
+                <option value="database">Bases de Datos</option>
+            </select>
+            <select id="filter-score">
+                <option value="">Todas las puntuaciones</option>
+                <option value="90">90% o más</option>
+                <option value="70">70% o más</option>
+                <option value="50">50% o más</option>
+            </select>
+        </div>
+
+        <div class="results-table">
+            <div id="loading" class="loading">
+                <i class="fas fa-spinner"></i>
+                <p id="loading-text">Cargando resultados...</p>
+                <div id="error-display" style="color: #ef4444; margin-top: 1rem; font-size: 0.9rem;"></div>
+            </div>
+            <div id="no-results" class="no-results" style="display:none;">
+                <i class="fas fa-inbox"></i>
+                <p>No se encontraron resultados en la base de datos.</p>
+                <p style="font-size: 0.8rem; color: #888;">Si acabas de realizar un test, espera unos segundos y recarga la página.</p>
+            </div>
+            <table id="results-table" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Candidato</th>
+                        <th>Evaluador</th>
+                        <th>Puesto</th>
+                        <th>Examen</th>
+                        <th>Puntuación</th>
+                        <th>Correctas</th>
+                        <th>Incorrectas</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                </tbody>
+            </table>
+        </div>
+
+        <div id="debug-log">
+            <strong>Debug Log:</strong><br>
+        </div>
+    </div>
+
+    <footer style="text-align: center; padding: 2rem; color: #94a3b8; font-size: 0.9rem; border-top: 1px solid rgba(255, 255, 255, 0.05); margin-top: 4rem;">
+        <p>&copy; <span id="footer-year"></span> Menutech.</p>
+    </footer>
+
+    <script>
+        document.getElementById('footer-year').textContent = new Date().getFullYear();
+        // Supabase Configuration
+        const supabaseUrl = 'https://ojpyfjgkffmzwvukjagf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcHlmamdrZmZtend2dWtqYWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDIwMzYsImV4cCI6MjA3OTcxODAzNn0.dlVYmoMumBse_O1PLBx0FeNITqY4YktefD6l_uonSgo';
+
+        const debugLog = document.getElementById('debug-log');
+        function log(msg, isError = false) {
+            console.log(msg);
+            const entry = document.createElement('div');
+            entry.style.color = isError ? '#ff4444' : '#00ff00';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            debugLog.appendChild(entry);
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
+
+        function toggleDebug() {
+            debugLog.style.display = debugLog.style.display === 'block' ? 'none' : 'block';
+        }
+
+        let _supabaseClient = null;
+        let allResults = [];
+        let filteredResults = [];
+
+        async function initSupabase() {
+            log('Iniciando Supabase...');
+            try {
+                if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+                    // Esperar un poco por si la carga del script es lenta
+                    for (let i = 0; i < 5; i++) {
+                        log(`Esperando a que la librería de Supabase cargue... (${i + 1}/5)`);
+                        await new Promise(r => setTimeout(r, 1000));
+                        if (window.supabase && typeof window.supabase.createClient === 'function') break;
+                    }
+                }
+
+                if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+                    throw new Error('La librería de Supabase no está disponible. Verifica tu conexión a internet.');
+                }
+
+                _supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+                log('Cliente Supabase creado con éxito');
+                return true;
+            } catch (e) {
+                log('Error de inicialización: ' + e.message, true);
+                document.getElementById('error-display').textContent = 'Error: ' + e.message;
+                return false;
+            }
+        }
+
+        async function loadResults() {
+            log('loadResults() llamada');
+            const loadingDiv = document.getElementById('loading');
+            const errorDisplay = document.getElementById('error-display');
+            const loadingText = document.getElementById('loading-text');
+
+            loadingDiv.style.display = 'block';
+            errorDisplay.textContent = '';
+
+            if (!_supabaseClient) {
+                const ok = await initSupabase();
+                if (!ok) {
+                    loadingDiv.style.display = 'block'; // Keep visible to show error inside it
+                    loadingText.style.display = 'none';
+                    return;
+                }
+            }
+
+            loadingText.textContent = 'Consultando base de datos...';
+            loadingText.style.display = 'block';
+
+            // Timeout safety: 10 seconds total
+            const timeoutId = setTimeout(() => {
+                if (allResults.length === 0 && loadingDiv.style.display !== 'none') {
+                    log('La consulta está tardando mucho...', true);
+                    loadingText.innerHTML = `
+                        <p>La consulta está tardando más de lo esperado...</p>
+                        <button onclick="location.reload()" class="back-btn" style="margin-top:1rem; padding:0.5rem 1rem; font-size:0.8rem;">
+                            <i class="fas fa-sync"></i> Reintentar ahora
+                        </button>
+                    `;
+                }
+            }, 8000);
+
+            try {
+                log('Enviando consulta a la tabla "exam_results"...');
+                // Intentamos primero con created_at, luego con id, luego sin orden
+                let result = await _supabaseClient
+                    .from('exam_results')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (result.error) {
+                    log('Error con created_at, reintentando con id: ' + result.error.message);
+                    result = await _supabaseClient
+                        .from('exam_results')
+                        .select('*')
+                        .order('id', { ascending: false });
+                }
+
+                if (result.error) {
+                    log('Error con id, intentando sin orden: ' + result.error.message);
+                    result = await _supabaseClient
+                        .from('exam_results')
+                        .select('*');
+                }
+
+                if (result.error) {
+                    log('Error de consulta Supabase final: ' + result.error.message, true);
+                    throw result.error;
+                }
+
+                log('Datos recibidos. Filas: ' + (result.data ? result.data.length : 0));
+                clearTimeout(timeoutId);
+                allResults = result.data || [];
+                filteredResults = allResults;
+
+                renderResults();
+
+                loadingDiv.style.display = 'none';
+
+                if (allResults.length === 0) {
+                    log('No hay datos en la tabla');
+                    document.getElementById('no-results').style.display = 'block';
+                    document.getElementById('results-table').style.display = 'none';
+                } else {
+                    log('Mostrando tabla de resultados');
+                    document.getElementById('no-results').style.display = 'none';
+                    document.getElementById('results-table').style.display = 'table';
+                }
+            } catch (error) {
+                clearTimeout(timeoutId);
+                log('Error fatal en loadResults: ' + error.message, true);
+                loadingText.style.display = 'none';
+                errorDisplay.innerHTML = `
+                    <div style="background: rgba(239, 68, 68, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid #ef4444;">
+                        <p><strong>Error al cargar datos:</strong></p>
+                        <p style="font-size:0.8rem; margin: 0.5rem 0;">${error.message || 'Error de conexión con Supabase'}</p>
+                        <button onclick="location.reload()" class="back-btn" style="margin-top:1rem; padding:0.5rem 1rem; font-size:0.8rem; background: #ef4444;">
+                            <i class="fas fa-sync"></i> Reintentar
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function renderResults() {
+            const tbody = document.getElementById('results-body');
+            tbody.innerHTML = '';
+
+            if (filteredResults.length === 0) return;
+
+            filteredResults.forEach(result => {
+                const row = document.createElement('tr');
+
+                const dateStr = result.created_at ? new Date(result.created_at).toLocaleString('es-ES', {
+                    year: 'numeric', month: 'short', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                }) : 'Sin fecha';
+
+                let score = (result.score_percentage !== null && result.score_percentage !== undefined) ? Number(result.score_percentage) : NaN;
+
+                // NEW: Try to recover counts and metadata from details if primary columns are missing
+                let correct = result.correct_count;
+                let incorrect = result.incorrect_count;
+                let empty = result.empty_count || 0;
+
+                // Aggressive metadata recovery
+                let recoveredEvaluator = result.evaluator_name || result.evaluator || '';
+                let recoveredPosition = result.target_position || result.position || '';
+
+                if (result.details) {
+                    try {
+                        const details = typeof result.details === 'string' ? JSON.parse(result.details) : result.details;
+
+                        // Handle both old format (Array) and new format (Object with .results)
+                        let exerciseResults = [];
+                        if (Array.isArray(details)) {
+                            exerciseResults = details;
+                        } else if (details && typeof details === 'object') {
+                            exerciseResults = details.results || [];
+
+                            // Aggressively recover metadata from JSON blob if top-level is empty or generic 'N/A'
+                            const meta = details.metadata || {};
+                            if (!recoveredEvaluator || recoveredEvaluator === 'N/A' || recoveredEvaluator === 'null') {
+                                recoveredEvaluator = meta.evaluator || meta.evaluator_name || '';
+                            }
+                            if (!recoveredPosition || recoveredPosition === 'N/A' || recoveredPosition === 'null') {
+                                recoveredPosition = meta.position || meta.target_position || '';
+                            }
+                        }
+
+                        // Recover counts if they are zero but we have a positive score or details exist
+                        if ((correct === null || correct === undefined || (correct === 0 && score > 0)) && exerciseResults.length > 0) {
+                            correct = exerciseResults.filter(d => d.status === 'correct').length;
+                            incorrect = exerciseResults.filter(d => d.status === 'incorrect' || d.status === 'empty').length;
+                        }
+                    } catch (e) {
+                        console.error("Error parsing details for recovery:", e);
+                    }
+                }
+
+                // Final Fallbacks for display
+                correct = correct || 0;
+                incorrect = incorrect || 0;
+                recoveredEvaluator = recoveredEvaluator && recoveredEvaluator !== 'N/A' ? recoveredEvaluator : 'N/A';
+                recoveredPosition = recoveredPosition && recoveredPosition !== 'N/A' ? recoveredPosition : 'N/A';
+
+                const total = correct + incorrect + empty;
+
+                if (isNaN(score) || score === null || score > 100 || score < 0) {
+                    score = total > 0 ? Math.round((correct / total) * 100) : 0;
+                }
+
+                // Ensure score is a valid number for display
+                if (isNaN(score)) score = 0;
+
+                const scoreClass =
+                    score >= 90 ? 'score-excellent' :
+                        score >= 70 ? 'score-good' :
+                            score >= 50 ? 'score-fair' : 'score-poor';
+
+                const examType = result.exam_type || 'unknown';
+                let examClass = 'exam-unknown';
+                const lowExam = examType.toLowerCase();
+                if (lowExam.includes('program') || lowExam.includes('code')) examClass = 'exam-programming';
+                else if (lowExam.includes('inglés') || lowExam.includes('english')) examClass = 'exam-english';
+                else if (lowExam.includes('base') || lowExam.includes('data')) examClass = 'exam-database';
+
+                // Using textContent for user-provided data to prevent XSS
+                const tdDate = document.createElement('td');
+                tdDate.textContent = dateStr;
+
+                const tdCandidate = document.createElement('td');
+                const strongCandidate = document.createElement('strong');
+                strongCandidate.textContent = result.candidate_name || result.text || 'Anónimo';
+                tdCandidate.appendChild(strongCandidate);
+
+                const tdEvaluator = document.createElement('td');
+                tdEvaluator.textContent = recoveredEvaluator;
+
+                const tdPosition = document.createElement('td');
+                tdPosition.textContent = recoveredPosition;
+
+                const tdExam = document.createElement('td');
+                tdExam.innerHTML = `<span class="exam-type-badge ${examClass}">${formatExamType(examType)}</span>`;
+
+                const tdScore = document.createElement('td');
+                tdScore.innerHTML = `<span class="dashboard-score-badge ${scoreClass}">${score}%</span>`;
+
+                const tdCorrect = document.createElement('td');
+                tdCorrect.style.color = '#10b981';
+                tdCorrect.textContent = correct;
+
+                const tdIncorrect = document.createElement('td');
+                tdIncorrect.style.color = '#ef4444';
+                // Aggregate incorrect and empty for display since we removed the Vacías column
+                tdIncorrect.textContent = incorrect + (result.empty_count || 0);
+
+                row.appendChild(tdDate);
+                row.appendChild(tdCandidate);
+                row.appendChild(tdEvaluator);
+                row.appendChild(tdPosition);
+                row.appendChild(tdExam);
+                row.appendChild(tdScore);
+                row.appendChild(tdCorrect);
+                row.appendChild(tdIncorrect);
+
+                tbody.appendChild(row);
+            });
+        }
+
+        function formatExamType(type) {
+            const types = {
+                'programming': 'Programación',
+                'english': 'Inglés',
+                'database': 'Bases de Datos',
+                'programación': 'Programación',
+                'bases de datos': 'Bases de Datos'
+            };
+            const lowerType = (type || '').toLowerCase();
+            return types[lowerType] || type || 'Desconocido';
+        }
+
+        function applyFilters() {
+            const searchName = document.getElementById('search-name').value.toLowerCase();
+            const filterExam = document.getElementById('filter-exam').value;
+            const filterScore = parseInt(document.getElementById('filter-score').value) || 0;
+
+            filteredResults = allResults.filter(result => {
+                const candidateName = (result.candidate_name || result.text || '').toLowerCase();
+                const evaluatorName = (result.evaluator_name || '').toLowerCase();
+                const targetPosition = (result.target_position || '').toLowerCase();
+
+                const matchesName = candidateName.includes(searchName) ||
+                    evaluatorName.includes(searchName) ||
+                    targetPosition.includes(searchName);
+                const matchesExam = !filterExam || result.exam_type === filterExam;
+                const matchesScore = (Number(result.score_percentage) || 0) >= filterScore;
+
+                return matchesName && matchesExam && matchesScore;
+            });
+
+            renderResults();
+
+            if (filteredResults.length === 0) {
+                document.getElementById('results-table').style.display = 'none';
+                document.getElementById('no-results').style.display = 'block';
+            } else {
+                document.getElementById('results-table').style.display = 'table';
+                document.getElementById('no-results').style.display = 'none';
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('search-name').addEventListener('input', applyFilters);
+        document.getElementById('filter-exam').addEventListener('change', applyFilters);
+        document.getElementById('filter-score').addEventListener('change', applyFilters);
+
+        // Iniciar carga
+        if (document.readyState === 'complete') {
+            loadResults();
+        } else {
+            window.addEventListener('load', loadResults);
+        }
+    </script>
+</body>
+
+</html>
