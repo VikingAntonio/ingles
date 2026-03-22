@@ -516,6 +516,10 @@
                 const { data, error } = await _supabaseClient.from('subjects').select('slug, title');
                 if (error) throw error;
                 const select = document.getElementById('filter-exam');
+
+                // Clear existing options except the first one
+                select.innerHTML = '<option value="">Todos los exámenes</option>';
+
                 data.forEach(s => {
                     const opt = document.createElement('option');
                     opt.value = s.slug;
