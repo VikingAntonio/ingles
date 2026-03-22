@@ -1,4 +1,4 @@
-// Global State 
+// Global State
 let courseData = {};
 let currentState = {
     subject: null,
@@ -11,7 +11,7 @@ const supabaseUrl = 'https://ojpyfjgkffmzwvukjagf.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcHlmamdrZmZtend2dWtqYWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDIwMzYsImV4cCI6MjA3OTcxODAzNn0.dlVYmoMumBse_O1PLBx0FeNITqY4YktefD6l_uonSgo';
 const _supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-// DOM Elements 
+// DOM Elements
 const homeView = document.getElementById('home-view');
 const levelView = document.getElementById('level-view');
 const appView = document.getElementById('app-view');
@@ -21,6 +21,7 @@ const levelSubjectTitle = document.getElementById('level-subject-title');
 const backBtn = document.getElementById('btn-back');
 const homeLevelBtn = document.getElementById('btn-home-level');
 const navBtns = document.querySelectorAll('.nav-btn');
+const cards = document.querySelectorAll('.card');
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', async () => {
@@ -46,25 +47,47 @@ async function syncCourseData() {
 
                 const exercises = questions.map(q => {
                     let ex = {
-                        type: q.type, title: q.title, instruction: q.instruction, question: q.question_text,
+                        type: q.type,
+                        title: q.title,
+                        instruction: q.instruction,
+                        question: q.question_text,
                         correct: !isNaN(parseInt(q.correct_answer)) ? parseInt(q.correct_answer) : q.correct_answer,
-                        options: q.options || [], audio_url: q.audio_url
+                        options: q.options || [],
+                        audio_url: q.audio_url
                     };
+
+                    // Map complex data back to exercise structure
                     if (q.data) {
-                        if (q.type === 'builder') ex.challenges = [{ goal: q.question_text, correct: q.correct_answer, blocks: q.data.blocks || [] }];
-                        else if (q.type === 'sorter') ex.lines = q.data.lines || [];
-                        else if (q.type === 'match') ex.pairs = q.data.pairs || [];
-                        else if (q.type === 'flowchart-free') { ex.items = q.data.items || []; ex.solution = q.data.solution || { nodes: [], edges: [] }; }
+                        if (q.type === 'builder') {
+                            ex.challenges = [{
+                                goal: q.question_text,
+                                correct: q.correct_answer,
+                                blocks: q.data.blocks || []
+                            }];
+                        } else if (q.type === 'sorter') {
+                            ex.lines = q.data.lines || [];
+                        } else if (q.type === 'match') {
+                            ex.pairs = q.data.pairs || [];
+                        } else if (q.type === 'flowchart-free') {
+                            ex.items = q.data.items || [];
+                            ex.solution = q.data.solution || { nodes: [], edges: [] };
+                        }
                     }
                     if (q.type === 'speech-practice') ex.text = q.question_text;
                     if (q.type === 'listening-practice') ex.script = q.instruction;
+
                     return ex;
                 });
 
                 newCourseData[s.slug].levels.push({
-                    id: l.level_number, title: l.title,
+                    id: l.level_number,
+                    title: l.title,
                     lesson: { title: l.lesson_title, content: l.lesson_content },
-                    game: { type: l.game_type || 'mixed', title: l.game_title, exercises: exercises }
+                    game: {
+                        type: l.game_type || 'mixed',
+                        title: l.game_title,
+                        exercises: exercises
+                    }
                 });
             }
         }
@@ -93,236 +116,2222 @@ function initHomeCards() {
         container.appendChild(card);
     });
 
-    const lab = document.createElement('div'); lab.className = 'card fade-in'; lab.style.borderColor='var(--primary-color)';
+    const lab = document.createElement('div');
+    lab.className = 'card fade-in';
+    lab.style.borderColor='var(--primary-color)';
     lab.innerHTML = `<div class="icon" style="color:var(--secondary-color)"><i class="fas fa-microphone-alt"></i></div><h2>Shadowing Lab</h2><p>Práctica de fluidez.</p>`;
-    lab.onclick = () => window.location.href='learnEnglish.html'; container.appendChild(lab);
+    lab.onclick = () => window.location.href='learnEnglish.html';
+    container.appendChild(lab);
 
-    const dash = document.createElement('div'); dash.className = 'card fade-in'; dash.style.borderColor='#10b981';
+    const dash = document.createElement('div');
+    dash.className = 'card fade-in';
+    dash.style.borderColor='#10b981';
     dash.innerHTML = `<div class="icon" style="color:#10b981"><i class="fas fa-chart-line"></i></div><h2>Dashboard</h2><p>Ver resultados.</p>`;
-    dash.onclick = () => window.location.href='score.html'; container.appendChild(dash);
+    dash.onclick = () => window.location.href='score.html';
+    container.appendChild(dash);
 
-    const adm = document.createElement('div'); adm.className = 'card fade-in'; adm.style.borderColor='var(--primary-color)';
+    const adm = document.createElement('div');
+    adm.className = 'card fade-in';
+    adm.style.borderColor='var(--primary-color)';
     adm.innerHTML = `<div class="icon" style="color:var(--primary-color)"><i class="fas fa-user-shield"></i></div><h2>Administración</h2><p>Configurar exámenes.</p>`;
-    adm.onclick = () => window.location.href='adminPanel.html'; container.appendChild(adm);
+    adm.onclick = () => window.location.href='adminPanel.html';
+    container.appendChild(adm);
 }
 
+// Completed Levels
+let completedLevels = new Set();
+
+// DOM Elements
+const homeView = document.getElementById('home-view');
+const levelView = document.getElementById('level-view');
+const appView = document.getElementById('app-view');
+const contentArea = document.getElementById('content-area');
+const subjectTitle = document.getElementById('current-subject-title');
+const levelSubjectTitle = document.getElementById('level-subject-title');
+const backBtn = document.getElementById('btn-back');
+const homeLevelBtn = document.getElementById('btn-home-level');
+const navBtns = document.querySelectorAll('.nav-btn');
+const cards = document.querySelectorAll('.card');
+
+// Modal Elements
+const modal = document.getElementById('level-modal');
+const modalScore = document.getElementById('modal-score-display');
+const btnBackLevels = document.getElementById('btn-back-levels');
+
+// Event Listeners
+cards.forEach(card => {
+    card.addEventListener('click', () => {
+        const subject = card.getAttribute('data-subject');
+        if (subject) openSubject(subject);
+    });
+});
+
+if (backBtn) {
+    backBtn.addEventListener('click', () => {
+        if (currentState.subject) openSubject(currentState.subject);
+    });
+}
+
+if (homeLevelBtn) {
+    homeLevelBtn.addEventListener('click', goHome);
+}
+
+if (navBtns) {
+    navBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const mode = btn.getAttribute('data-mode');
+            if (mode) switchMode(mode);
+        });
+    });
+}
+
+// Navigation Functions
 function openSubject(subject) {
     currentState.subject = subject;
     levelSubjectTitle.textContent = courseData[subject].title;
     renderLevelSelection(subject);
-    homeView.classList.add('hidden'); levelView.classList.remove('hidden');
+    homeView.classList.remove('active');
+    homeView.classList.add('hidden');
+    appView.classList.remove('active');
+    appView.classList.add('hidden');
+    levelView.classList.remove('hidden');
     setTimeout(() => levelView.classList.add('active'), 50);
 }
 
 function renderLevelSelection(subject) {
     const container = document.getElementById('levels-container');
     container.innerHTML = '';
+
     courseData[subject].levels.forEach((level, index) => {
         const levelCard = document.createElement('div');
         levelCard.className = 'level-card fade-in';
-        levelCard.innerHTML = `<span>Nivel ${level.id}</span><h3>${level.title}</h3><p>${level.lesson.title}</p>`;
-        levelCard.addEventListener('click', () => loadLevel(subject, index));
+        levelCard.style.animationDelay = `${index * 0.1}s`;
+
+        // ALL LEVELS UNLOCKED by request
+        // const isUnlocked = index === 0 || completedLevels.has(`${subject}-${courseData[subject].levels[index-1].id}`);
+
+        // Remove locking UI logic, render all as unlocked
+        levelCard.innerHTML = `
+            <span>Nivel ${level.id}</span>
+            <h3>${level.title}</h3>
+            <p>${level.lesson.title}</p>
+        `;
+        levelCard.addEventListener('click', () => {
+            loadLevel(subject, index);
+        });
+
+
         container.appendChild(levelCard);
     });
 }
 
-let candidateInfo = { name: '', evaluator: '', position: '' };
+// Global variable to store candidate information
+let candidateInfo = {
+    name: '',
+    evaluator: '',
+    position: ''
+};
+
+// 1. Level System Logic
 function loadLevel(subject, levelIndex) {
+    console.log('loadLevel called:', subject, levelIndex);
+    // Show candidate form before starting exam
+    showCandidateForm(subject, levelIndex);
+}
+
+function showCandidateForm(subject, levelIndex) {
+    console.log('showCandidateForm called');
     const modal = document.getElementById('candidate-modal');
     const form = document.getElementById('candidate-form');
+    const skipBtn = document.getElementById('skip-candidate-form');
+
+    if (!modal) {
+        console.error('Candidate modal not found!');
+        // Fallback: start exam directly with defaults
+        candidateInfo.name = 'Test Candidate';
+        candidateInfo.evaluator = 'Test Evaluator';
+        candidateInfo.position = 'Test Position';
+        startExam(subject, levelIndex);
+        return;
+    }
+
+    if (!form) {
+        console.error('Candidate form not found!');
+        candidateInfo.name = 'Test Candidate';
+        candidateInfo.evaluator = 'Test Evaluator';
+        candidateInfo.position = 'Test Position';
+        startExam(subject, levelIndex);
+        return;
+    }
+
+    console.log('Modal and form found, resetting and showing...');
+
+    // Reset form
+    form.reset();
+
+    // Show modal
     modal.classList.add('active');
+    console.log('Modal should now be visible');
+
+    // Handle skip button (for testing)
+    if (skipBtn) {
+        skipBtn.onclick = () => {
+            console.log('Skip button clicked - using default values');
+            candidateInfo.name = 'Test Candidate';
+            candidateInfo.evaluator = 'Test Evaluator';
+            candidateInfo.position = 'Test Position';
+            modal.classList.remove('active');
+            startExam(subject, levelIndex);
+        };
+    }
+
+    // Handle form submission
     form.onsubmit = (e) => {
         e.preventDefault();
-        candidateInfo = {
-            name: document.getElementById('candidate-name').value,
-            evaluator: document.getElementById('evaluator-name').value,
-            position: document.getElementById('target-position').value
-        };
+        console.log('Form submitted');
+
+        // Store candidate information
+        candidateInfo.name = document.getElementById('candidate-name').value.trim();
+        candidateInfo.evaluator = document.getElementById('evaluator-name').value.trim();
+        candidateInfo.position = document.getElementById('target-position').value.trim();
+
+        console.log('Candidate info:', candidateInfo);
+
+        // Validate
+        if (!candidateInfo.name || !candidateInfo.evaluator || !candidateInfo.position) {
+            alert('Por favor completa todos los campos');
+            return;
+        }
+
+        // Hide modal
         modal.classList.remove('active');
-        startExam(subject, levelIndex);
-    };
-    document.getElementById('skip-candidate-form').onclick = () => {
-        candidateInfo = { name: 'Anónimo', evaluator: 'Admin', position: 'Dev' };
-        modal.classList.remove('active');
+        console.log('Modal hidden, starting exam...');
+
+        // Now start the exam
         startExam(subject, levelIndex);
     };
 }
 
 function startExam(subject, levelIndex) {
-    currentState.subject = subject; currentState.levelIndex = levelIndex; currentState.mode = 'game';
-    levelView.classList.add('hidden'); appView.classList.remove('hidden'); appView.classList.add('active');
-    subjectTitle.textContent = courseData[subject].levels[levelIndex].title;
+    console.log('startExam called:', subject, levelIndex);
+    currentState.subject = subject;
+    currentState.levelIndex = levelIndex;
+    currentState.mode = 'game'; // Force Game Mode
+
+    // 1. Switch Views (Navigation)
+    const levelView = document.getElementById('level-view');
+    const appView = document.getElementById('app-view');
+    const homeView = document.getElementById('home-view');
+
+    // Hide others
+    if (homeView) homeView.classList.add('hidden');
+    if (levelView) {
+        levelView.classList.remove('active');
+        levelView.classList.add('hidden');
+    }
+
+    // Show App View
+    if (appView) {
+        appView.classList.remove('hidden');
+        // Force reflow
+        void appView.offsetWidth;
+        appView.classList.add('active');
+    }
+
+    // 2. Update Header
+    const levelData = courseData[subject].levels[levelIndex];
+    if (subjectTitle) subjectTitle.textContent = levelData.title;
+
+    // 3. Render Game Directly
     renderContent();
 }
 
 function goHome() {
-    appView.classList.remove('active'); appView.classList.add('hidden');
-    homeView.classList.remove('hidden'); homeView.classList.add('active');
+    const levelView = document.getElementById('level-view');
+    const appView = document.getElementById('app-view');
+    const homeView = document.getElementById('home-view');
+
+    levelView.classList.remove('active');
+    levelView.classList.add('hidden');
+    appView.classList.remove('active');
+    appView.classList.add('hidden');
+    homeView.classList.remove('hidden');
+    setTimeout(() => homeView.classList.add('active'), 50);
     currentState.subject = null;
 }
 
+// Content Rendering Engine
 function renderContent() {
+    // Ensure contentArea exists
+    const contentArea = document.getElementById('content-area');
+    if (!contentArea) return;
+
+    contentArea.innerHTML = '';
     const data = courseData[currentState.subject].levels[currentState.levelIndex];
-    if (currentState.mode === 'learn') renderLesson(data.lesson); else renderGame(data.game);
+
+    if (currentState.mode === 'learn') {
+        renderLesson(data.lesson);
+    } else {
+        renderGame(data.game);
+    }
 }
 
 function renderLesson(lesson) {
-    contentArea.innerHTML = `<div class="lesson-content fade-in"><h1>${lesson.title}</h1><div class="lesson-body">${lesson.content}</div><div style="text-align:center;margin-top:3rem;"><button class="game-btn" onclick="currentState.mode='game';renderContent()">Ir a la Práctica 🎮</button></div></div>`;
+    const contentArea = document.getElementById('content-area');
+    contentArea.innerHTML = `
+        <div class="lesson-content fade-in">
+            <h1>${lesson.title}</h1>
+            <div class="lesson-body">
+                ${lesson.content}
+            </div>
+            <div style="text-align: center; margin-top: 3rem;">
+                 <button class="game-btn" onclick="document.querySelector('[data-mode=\\'game\\']').click()">
+                    Ir a la Práctica 🎮
+                </button>
+            </div>
+        </div>
+    `;
 }
 
-function switchMode(mode) { currentState.mode = mode; renderContent(); }
-
 function renderGame(game) {
-    contentArea.innerHTML = `<div class="game-container fade-in" id="game-workspace"><div class="level-progress"><div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div></div><div id="active-game-area" style="width:100%;height:100%;"></div></div>`;
+    const contentArea = document.getElementById('content-area');
+
+    // Setup Workspace
+    contentArea.innerHTML = `
+        <div class="game-container fade-in" id="game-workspace">
+             <div class="level-progress">
+               <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+            </div>
+            ${game.showSchemaDiagram ? `
+                <div style="text-align: right; padding: 0 1rem; margin-bottom: 0.5rem;">
+                    <button id="btn-show-schema-global" class="game-btn small" style="background:var(--primary-color);">Ver tablas</button>
+                </div>
+            ` : ''}
+            <!-- Global Floating Diagram Panel -->
+            <div id="diagram-overlay-panel" class="floating-diagram-panel hidden">
+                <div class="panel-header" id="diagram-header">
+                    <span>Enterprise Schema</span>
+                    <button id="btn-close-diagram">×</button>
+                </div>
+                <div class="panel-body">
+                    <div class="zoom-controls">
+                        <button id="btn-zoom-in" title="Zoom In">+</button>
+                        <button id="btn-zoom-out" title="Zoom Out">-</button>
+                        <button id="btn-zoom-reset" title="Reset Zoom">1:1</button>
+                    </div>
+                    <div class="image-viewport" id="diagram-viewport">
+                        <img src="database_diagram.png" id="diagram-image" alt="Database Diagram">
+                    </div>
+                </div>
+            </div>
+            <div id="active-game-area" style="width:100%; height:100%;"></div>
+        </div>
+    `;
+
+    // Initialize Diagram Panel Once
+    setupGlobalDiagramPanel();
+
+    const showBtnGlobal = document.getElementById('btn-show-schema-global');
+    if (showBtnGlobal) {
+        showBtnGlobal.onclick = () => {
+            const panel = document.getElementById('diagram-overlay-panel');
+            if (panel) panel.classList.remove('hidden');
+        };
+    }
+
     const container = document.getElementById('active-game-area');
     const exercises = game.exercises || [game];
-    let currentIdx = 0;
-    let results = [];
+    let currentExerciseIdx = 0;
 
-    function loadEx() {
-        if (currentIdx >= exercises.length) { handleLevelComplete(results, exercises.length); return; }
+    // Session Score
+    let resultsArray = [];
+
+    function loadExercise() {
+        if (currentExerciseIdx >= exercises.length) {
+            handleLevelComplete(resultsArray, exercises.length);
+            return;
+        }
+
         container.innerHTML = '';
-        const ex = exercises[currentIdx];
-        document.querySelector('.progress-fill').style.width = `${(currentIdx / exercises.length) * 100}%`;
+        const ex = exercises[currentExerciseIdx];
 
-        const onDone = (status) => {
+        // Update Progress
+        const progress = ((currentExerciseIdx) / exercises.length) * 100;
+        const fill = document.querySelector('.progress-fill');
+        if (fill) fill.style.width = `${progress}%`;
+
+        // Advance Handler
+        const onStepComplete = (status) => {
+            if (Array.isArray(status)) {
+                resultsArray = resultsArray.concat(status);
+            } else if (typeof status === 'object' && status !== null && status.status) {
+                // Detailed result from speech or other types
+                resultsArray.push({
+                    type: ex.type,
+                    title: ex.title || ex.question || 'Ejercicio',
+                    ...status
+                });
+            } else {
+                // Simple status (string or boolean)
+                let finalStatus = status;
+                if (status === true) finalStatus = 'correct';
+                if (status === false) finalStatus = 'incorrect';
+                if (!finalStatus) finalStatus = 'empty';
+
+                resultsArray.push({
+                    type: ex.type,
+                    title: ex.title || ex.question || 'Ejercicio',
+                    status: finalStatus
+                });
+            }
+
+            currentExerciseIdx++;
+            loadExercise();
+        };
+
+        try {
+            if (ex.type === 'sorter') setupPseudocodeBuilder(ex, container, onStepComplete);
+            else if (ex.type === 'flowchart-free') setupFlowchartCanvas(ex, container, onStepComplete);
+            else if (ex.type === 'quiz-item') setupQuizItem(ex, container, onStepComplete);
+            else if (ex.type === 'match') setupMatch(ex, container, onStepComplete);
+            else if (ex.type === 'builder') setupBuilder(ex, container, onStepComplete);
+            else if (ex.type === 'quiz-diagram') setupQuizDiagram(ex, container, onStepComplete);
+            else if (ex.type === 'speech-practice') setupSpeechPractice(ex, container, onStepComplete);
+            else if (ex.type === 'listening-practice') setupListeningPractice(ex, container, onStepComplete);
+            else if (ex.type === 'mixed') setupMixedGame(ex, container);
+            else {
+                console.warn('Unknown type:', ex.type);
+                onStepComplete('correct');
+            }
+        } catch (err) {
+            console.error(err);
+            container.innerHTML = `<div class="feedback-msg incorrect">Error cargando ejercicio: ${err.message}</div>`;
+            const skipBtn = document.createElement('button');
+            skipBtn.className = 'game-btn';
+            skipBtn.textContent = 'Saltar Error';
+            skipBtn.style.marginTop = '1rem';
+            skipBtn.onclick = () => onStepComplete('empty');
+            container.appendChild(skipBtn);
+        }
+    }
+
+    // Start
+    loadExercise();
+}
+
+/**
+ * GLOBAL Diagram Panel Logic
+ * Sets up persistent listeners for the diagram panel.
+ */
+function setupGlobalDiagramPanel() {
+    const panel = document.getElementById('diagram-overlay-panel');
+    const header = document.getElementById('diagram-header');
+    const closeBtn = document.getElementById('btn-close-diagram');
+    const img = document.getElementById('diagram-image');
+    const viewport = document.getElementById('diagram-viewport');
+
+    if (!panel || !header) return;
+
+    closeBtn.onclick = () => panel.classList.add('hidden');
+
+    // Draggable Logic using addEventListener
+    let isDragging = false;
+    let startX, startY, initialX, initialY;
+
+    const onMouseMove = (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        panel.style.left = initialX + dx + 'px';
+        panel.style.top = initialY + dy + 'px';
+    };
+
+    const onMouseUp = () => {
+        isDragging = false;
+        panel.style.cursor = 'default';
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    header.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        initialX = panel.offsetLeft;
+        initialY = panel.offsetTop;
+        panel.style.cursor = 'grabbing';
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    // Zoom Logic
+    let scale = 1;
+    let translateX = 0;
+    let translateY = 0;
+
+    const updateTransform = () => {
+        img.style.transform = `scale(${scale}) translate(${translateX}px, ${translateY}px)`;
+    };
+
+    document.getElementById('btn-zoom-in').onclick = () => { scale += 0.2; updateTransform(); };
+    document.getElementById('btn-zoom-out').onclick = () => { scale = Math.max(0.2, scale - 0.2); updateTransform(); };
+    document.getElementById('btn-zoom-reset').onclick = () => { scale = 1; translateX = 0; translateY = 0; updateTransform(); };
+
+    // Panning Logic
+    let isPanning = false;
+    let pStartX, pStartY;
+
+    const onPanMove = (e) => {
+        if (!isPanning) return;
+        const dx = e.clientX - pStartX;
+        const dy = e.clientY - pStartY;
+        translateX += dx / scale;
+        translateY += dy / scale;
+        pStartX = e.clientX;
+        pStartY = e.clientY;
+        updateTransform();
+    };
+
+    const onPanEnd = () => {
+        isPanning = false;
+        viewport.style.cursor = 'grab';
+        document.removeEventListener('mousemove', onPanMove);
+        document.removeEventListener('mouseup', onPanEnd);
+    };
+
+    viewport.addEventListener('mousedown', (e) => {
+        if (e.target === img || e.target === viewport) {
+            isPanning = true;
+            pStartX = e.clientX;
+            pStartY = e.clientY;
+            viewport.style.cursor = 'grabbing';
+            document.addEventListener('mousemove', onPanMove);
+            document.addEventListener('mouseup', onPanEnd);
+            e.preventDefault();
+        }
+    });
+}
+
+// --- SUPABASE SAVE FUNCTION ---
+async function saveExamResults(results, total) {
+    console.log('🔵 saveExamResults called');
+    // Ensure candidateInfo is logged thoroughly
+    console.log('  - Current candidateInfo object:', JSON.stringify(candidateInfo, null, 2));
+
+    // Supabase Configuration
+    const supabaseUrl = 'https://ojpyfjgkffmzwvukjagf.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcHlmamdrZmZtend2dWtqYWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDIwMzYsImV4cCI6MjA3OTcxODAzNn0.dlVYmoMumBse_O1PLBx0FeNITqY4YktefD6l_uonSgo';
+    let supabaseClient = null;
+
+    try {
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+            supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+        } else {
+            console.error('❌ Supabase library not found in window object');
+        }
+    } catch (e) {
+        console.error('❌ Error initializing Supabase client:', e);
+    }
+
+    if (!supabaseClient) {
+        console.error('❌ Supabase client could not be initialized!');
+        return false;
+    }
+
+    // Calculate Summary Stats
+    let correct = 0, incorrect = 0, empty = 0, scoreSum = 0;
+
+    // Normalize Details
+    let detailsJSON = [];
+
+    if (Array.isArray(results)) {
+        console.log('  - Results is array, processing...');
+        total = results.length; // Use actual length as total
+        results.forEach(r => {
+            if (r.status === 'correct') {
+                correct++;
+                scoreSum += (r.score !== undefined ? r.score : 100);
+            }
+            else {
+                // Combine incorrect and empty as per request
+                incorrect++;
+            }
+            detailsJSON.push(r);
+        });
+    } else if (typeof results === 'object' && results !== null) {
+        console.log('  - Results is object (legacy)');
+        correct = results.correct || 0;
+        incorrect = (results.incorrect || 0) + (results.empty || 0);
+        empty = 0;
+        scoreSum = (correct * 100);
+    } else {
+        console.log('  - Results is number (simple score)');
+        correct = Number(results) || 0;
+        incorrect = total - correct;
+        scoreSum = (correct * 100);
+    }
+
+    // Determine overall percentage
+    // Each 'correct' counts as 1 towards the count.
+    // scoreSum is used for exercises that have partial scores (like speech).
+    // For regular exercises, 'correct' adds 100 to scoreSum.
+    const finalScorePct = total > 0 ? Math.min(100, Math.round(scoreSum / total)) : 0;
+
+    console.log('  - Calculated stats:', { correct, incorrect, empty, finalScorePct, scoreSum, total });
+
+    // Handle Audio Uploads if any blobs are present
+    let audioUrlFound = null;
+    for (let r of detailsJSON) {
+        if (r.details && r.details.audioBlob) {
+            try {
+                console.log("🎙️ Attempting audio upload to Supabase Storage...");
+                const fileName = `speech_${Date.now()}_${Math.random().toString(36).substring(7)}.webm`;
+                const { data, error } = await supabaseClient
+                    .storage
+                    .from('audio-results')
+                    .upload(fileName, r.details.audioBlob, {
+                        contentType: 'audio/webm',
+                        upsert: false
+                    });
+
+                if (error) {
+                    console.warn("⚠️ Audio upload failed:", error.message);
+                } else {
+                    const { data: urlData } = supabaseClient
+                        .storage
+                        .from('audio-results')
+                        .getPublicUrl(fileName);
+
+                    const publicUrl = urlData.publicUrl;
+                    r.details.audio_url = publicUrl;
+                    audioUrlFound = publicUrl;
+                    console.log("✅ Audio uploaded successfully:", publicUrl);
+                }
+            } catch (err) {
+                console.error("❌ Audio upload exception:", err);
+            }
+            // Delete blob to prevent JSON stringify issues
+            delete r.details.audioBlob;
+        }
+    }
+
+    // Create a structured details object for better recovery
+    const structuredDetails = {
+        metadata: {
+            candidate: candidateInfo.name || 'Anónimo',
+            evaluator: candidateInfo.evaluator || 'N/A',
+            position: candidateInfo.position || 'N/A',
+            date: new Date().toISOString()
+        },
+        results: detailsJSON
+    };
+
+    const record = {
+        candidate_name: candidateInfo.name || 'Candidato Desconocido',
+        evaluator_name: candidateInfo.evaluator || 'N/A',
+        target_position: candidateInfo.position || 'N/A',
+        exam_type: currentState.subject,
+        score_percentage: finalScorePct,
+        correct_count: correct,
+        incorrect_count: incorrect,
+        empty_count: 0, // Explicitly 0 as empty is merged into incorrect
+        details: JSON.stringify(structuredDetails),
+        audio_url: audioUrlFound // Add new field for the database column
+    };
+
+    try {
+        console.log("📤 Attempting primary save to 'exam_results'...", record);
+        let response = await supabaseClient
+            .from('exam_results')
+            .insert([record])
+            .select();
+
+        if (response.error) {
+            console.warn("⚠️ Primary save failed. Re-trying with name mapped to 'text' only...", response.error.message);
+            console.error("Failed Record attempt 1:", record);
+
+            // Fallback 1: Map candidate_name to 'text' but try to keep ALL other fields
+            const recordCompat = {
+                text: record.candidate_name,
+                evaluator_name: record.evaluator_name,
+                target_position: record.target_position,
+                exam_type: record.exam_type,
+                score_percentage: record.score_percentage,
+                correct_count: record.correct_count,
+                incorrect_count: record.incorrect_count,
+                empty_count: record.empty_count,
+                details: record.details,
+                audio_url: record.audio_url
+            };
+            response = await supabaseClient
+                .from('exam_results')
+                .insert([recordCompat])
+                .select();
+        }
+
+        if (response.error) {
+            console.warn("⚠️ Secondary save failed. Trying minimal columns + results counts...", response.error.message);
+            // Fallback 2: Keep details even if evaluator_name or target_position fail
+            const recordBasic = {
+                candidate_name: record.candidate_name || (record.text ? record.text : 'Anónimo'),
+                exam_type: record.exam_type,
+                score_percentage: record.score_percentage,
+                correct_count: record.correct_count,
+                incorrect_count: record.incorrect_count,
+                details: record.details // IMPORTANT: Keep metadata for recovery
+            };
+            response = await supabaseClient
+                .from('exam_results')
+                .insert([recordBasic])
+                .select();
+        }
+
+        if (response.error) {
+            console.warn("⚠️ Tertiary save failed. Trying absolute minimal with details...", response.error.message);
+            const minimalRecord = {
+                candidate_name: record.candidate_name || record.text || 'Anónimo',
+                exam_type: record.exam_type,
+                score_percentage: record.score_percentage,
+                details: record.details // Final fallback to keep the JSON blob
+            };
+            response = await supabaseClient
+                .from('exam_results')
+                .insert([minimalRecord])
+                .select();
+        }
+
+        if (response.error) {
+            console.error("❌ All Supabase insertion attempts failed:", response.error);
+            return false;
+        } else {
+            console.log("✅ Saved Success:", response.data);
+
+            // --- NEW: Save individual answers relationally ---
+            if (response.data && response.data[0] && response.data[0].id) {
+                const examId = response.data[0].id;
+                const answersToInsert = detailsJSON.map((res, index) => ({
+                    exam_id: examId,
+                    question_number: index + 1,
+                    status: res.status || 'empty'
+                }));
+
+                if (answersToInsert.length > 0) {
+                    console.log("📤 Inserting individual answers into 'exam_answers'...");
+                    const { error: answersError } = await supabaseClient
+                        .from('exam_answers')
+                        .insert(answersToInsert);
+
+                    if (answersError) {
+                        console.warn("⚠️ Could not save individual answers to 'exam_answers'. This is expected if the table hasn't been created yet:", answersError.message);
+                    } else {
+                        console.log("✅ Individual answers saved successfully.");
+                    }
+                }
+            }
+
+            return true;
+        }
+    } catch (err) {
+        console.error("❌ Fatal exception during save:", err);
+        return false;
+    }
+}
+
+async function handleLevelComplete(results, total) {
+    console.log('🏁 handleLevelComplete called');
+    console.log('  - results:', results);
+    console.log('  - total:', total);
+
+    // results can be Array (New) or Number/Object (Legacy)
+    let correctCount = 0;
+    let incorrectCount = 0;
+    let emptyCount = 0;
+    let detailsHTML = '';
+
+    if (Array.isArray(results)) {
+        total = results.length; // Ensure total matches results array
+        // New Detailed Mode
+        results.forEach(r => {
+            if (r.status === 'correct') correctCount++;
+            else if (r.status === 'incorrect') incorrectCount++;
+            else emptyCount++;
+
+            // Generate Detail Item
+            if (r.type === 'speech-practice' && r.details) {
+                const diffHtml = generateTextDiff(r.details.target, r.details.transcript);
+                detailsHTML += `
+                    <div style="background:rgba(0,0,0,0.2); padding:1rem; margin-top:1rem; border-radius:8px; text-align:left;">
+                        <h4 style="margin-bottom:0.5rem; color:var(--secondary-color);"> Speaking: ${r.details.score}% Match</h4>
+                        <p style="font-size:0.9rem; margin-bottom:0.5rem; color:#aaa;">Transcribed:</p>
+                        <div style="background:#0f172a; padding:0.8rem; border-radius:4px; font-family:monospace; line-height:1.6;">
+                            ${diffHtml}
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        total = results.length;
+    } else if (typeof results === 'object') {
+        correctCount = results.correct;
+        incorrectCount = results.incorrect;
+        emptyCount = results.empty;
+    } else {
+        correctCount = results; // Legacy number
+    }
+
+    const isPass = correctCount >= (total * 0.6);
+
+    if (isPass) {
+        completedLevels.add(`${currentState.subject}-${courseData[currentState.subject].levels[currentState.levelIndex].id}`);
+    }
+
+    // 1. SAVE TO DB AUTOMATICALLY (Called after total is normalized)
+    try {
+        await saveExamResults(results, total);
+    } catch (err) {
+        console.error("❌ Failed to save results:", err);
+    }
+
+    const modal = document.getElementById('level-modal');
+    const modalContent = modal.querySelector('.modal-content');
+
+    const scoreDisplay = `
+        <div style="display: flex; gap: 1rem; justify-content: center; font-size: 1.2rem; flex-wrap: wrap;">
+            <div style="color: var(--success);">✔ ${correctCount} Correctas</div>
+            <div style="color: var(--error);">✖ ${incorrectCount + emptyCount} Incorrectas</div>
+        </div>
+    `;
+
+    modalContent.innerHTML = `
+        <h2 class="modal-title">${isPass ? '¡Nivel Completado!' : '¡Buen Intento!'}</h2>
+        <div class="modal-score" style="font-size: 3rem; color: var(--accent-color); margin: 1rem 0;">
+            ${Math.round((correctCount / total) * 100)}%
+        </div>
+        ${scoreDisplay}
+
+        <div class="evaluator-view" style="max-height: 200px; overflow-y: auto; margin: 1rem 0; padding-right: 5px;">
+            ${detailsHTML}
+        </div>
+
+        <p class="modal-msg">${isPass ? '¡Has dominado este tema!' : 'Vuelve a intentarlo para mejorar.'}</p>
+        <div class="modal-actions">
+           <button class="modal-btn" onclick="document.getElementById('level-modal').classList.remove('active'); goHome()">Menú Principal</button>
+           <button class="modal-btn" style="background:var(--accent-color)" onclick="window.location.href='score.html'">Ver Resultados</button>
+           <button class="modal-btn secondary" onclick="location.reload()">Reiniciar</button>
+        </div>
+    `;
+
+    modal.classList.add('active');
+}
+
+// Helper: Text Diff Generator
+function generateTextDiff(target, transcript) {
+    if (!transcript) return `<span style="color:var(--error)">[No Audio]</span>`;
+
+    const targetWords = target.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/);
+    const userWords = transcript.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/);
+
+    // Very simple matching for demo: if user has word, mark green.
+    // For robust diffing we need a library, but this approximates User request.
+
+    return targetWords.map(word => {
+        if (userWords.includes(word)) {
+            return `<span style="color:var(--success)">${word}</span>`;
+        } else {
+            return `<span style="color:var(--error)">${word}</span>`;
+        }
+    }).join(' ');
+}
+
+// ---------------- GAME ENGINES ----------------
+
+// 1. Mixed Game Logic (Wrapper)
+function setupMixedGame(game, container) {
+    let currentExerciseIndex = 0;
+    // New Score Object
+    let resultsArray = [];
+
+    container.innerHTML = `<div id="mixed-exercise-area"></div>`;
+    const exerciseArea = document.getElementById('mixed-exercise-area');
+
+    function loadExercise() {
+        // Safety check
+        if (currentExerciseIndex >= game.exercises.length) {
+            handleLevelComplete(resultsArray, game.exercises.length);
+            return;
+        }
+
+        const exercise = game.exercises[currentExerciseIndex];
+
+        exerciseArea.innerHTML = `
+            <div class="exercise-header fade-in">
+                <h3>Ejercicio ${currentExerciseIndex + 1}/${game.exercises.length}</h3>
+                <h2>${exercise.title || exercise.question || 'Ejercicio'}</h2>
+                ${exercise.instruction ? `<p>${exercise.instruction}</p>` : ''}
+            </div>
+            <div id="exercise-content" class="fade-in"></div>
+            <div id="exercise-feedback-overlay" class="feedback-msg" style="margin-top:1rem; min-height: 1.5rem;"></div>
+        `;
+
+        const contentContainer = document.getElementById('exercise-content');
+
+        // Pass onComplete callback
+        // status can be: 'correct', 'incorrect', 'empty' (or boolean true/false for legacy)
+        const onComplete = (status) => handleExerciseComplete(status);
+
+        if (exercise.type === 'flowchart-free') setupFlowchartCanvas(exercise, contentContainer, onComplete);
+        else if (exercise.type === 'quiz-diagram') setupQuizDiagram(exercise, contentContainer, onComplete);
+        else if (exercise.type === 'quiz-item') setupQuizItem(exercise, contentContainer, onComplete);
+        else if (exercise.type === 'sorter') setupPseudocodeBuilder(exercise, contentContainer, onComplete);
+        else if (exercise.type === 'builder') setupBuilder(exercise, contentContainer, onComplete);
+        else if (exercise.type === 'speech-practice') setupSpeechPractice(exercise, contentContainer, onComplete);
+        else if (exercise.type === 'listening-practice') setupListeningPractice(exercise, contentContainer, onComplete);
+        else if (exercise.type === 'match') setupMatch(exercise, contentContainer, onComplete);
+    }
+
+    function handleExerciseComplete(status) {
+        if (Array.isArray(status)) {
+            resultsArray = resultsArray.concat(status);
+        } else {
+            // Normalizing legacy boolean returns
             let finalStatus = status;
             if (status === true) finalStatus = 'correct';
             if (status === false) finalStatus = 'incorrect';
             if (!finalStatus) finalStatus = 'empty';
 
-            if (typeof status === 'object' && status.status) {
-                results.push({ type: ex.type, title: ex.title || ex.question || 'Ejercicio', ...status });
+            const exercise = game.exercises[currentExerciseIndex];
+            resultsArray.push({
+                type: exercise.type,
+                title: exercise.title || exercise.question || 'Ejercicio',
+                status: finalStatus
+            });
+        }
+
+        const feedback = document.getElementById('exercise-feedback-overlay');
+        if (feedback) {
+            // Take status of last item added
+            const lastStatus = resultsArray[resultsArray.length - 1].status;
+            let msg = "";
+            let cls = "";
+            if (lastStatus === 'correct') { msg = "✔ ¡Correcto!"; cls = "correct"; }
+            else if (lastStatus === 'incorrect') { msg = "✖ Incorrecto"; cls = "incorrect"; }
+            else { msg = "⚪ Saltado / Vacío"; cls = "incorrect"; }
+
+            feedback.textContent = msg;
+            feedback.className = `feedback-msg ${cls}`;
+        }
+
+        setTimeout(() => {
+            currentExerciseIndex++;
+            if (currentExerciseIndex < game.exercises.length) {
+                loadExercise();
             } else {
-                results.push({ type: ex.type, title: ex.title || ex.question || 'Ejercicio', status: finalStatus });
+                handleLevelComplete(resultsArray, game.exercises.length);
+            }
+        }, 1500);
+    }
+
+    loadExercise();
+}
+
+// 2. Flowchart Canvas Logic (Refactored for 3-Panel & Manual Interactions)
+function setupFlowchartCanvas(exercise, container, onSuccess) {
+    // Handle Expanded Mode
+    const isExpanded = exercise.isExpanded || false;
+    const workspaceClass = isExpanded ? "flowchart-workspace expanded" : "flowchart-workspace";
+    const controlsStyle = isExpanded ? "position: absolute; top: 10px; right: 20px; z-index: 100;" : "margin-top:1rem;";
+
+    // New 3-Panel HTML Structure
+    container.innerHTML = `
+        <div class="exercise-header fade-in" style="margin-bottom: 2rem; text-align: center;">
+            <h2 style="color: var(--primary-color); margin-bottom: 0.5rem;">${exercise.title || 'Diagrama de Flujo'}</h2>
+            <p style="color: var(--text-secondary); font-size: 1.1rem;">${exercise.instruction || 'Crea el diagrama solicitado.'}</p>
+        </div>
+
+        <div class="${workspaceClass}">
+            <!-- Panel 1: Symbols -->
+            <div class="palette">
+                <h4>Símbolos</h4>
+                <div id="shape-palette" class="palette-items">
+                    <div class="draggable-shape" draggable="true" data-shape="oval">Inicio/Fin</div>
+                    <div class="draggable-shape" draggable="true" data-shape="parallelogram">Entrada/Salida</div>
+                    <div class="draggable-shape" draggable="true" data-shape="diamond">Decisión</div>
+                    <div class="draggable-shape" draggable="true" data-shape="rectangle">Proceso</div>
+                </div>
+
+                <div style="margin-top: auto; padding: 1rem; color: #888; font-size: 0.8rem;">
+                    💡 Arrastra símbolos al centro.<br>
+                    💡 Arrastra desde los puntos blancos para conectar.<br>
+                    💡 Supr/Backspace para borrar.
+                </div>
+            </div>
+
+            <!-- Panel 2: Canvas -->
+            <div class="canvas-area-wrapper" tabindex="0">
+                <div id="canvas-area" class="canvas-area" style="width: 100%; height: 100%; position: relative;">
+                    <svg id="connections-layer" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0;"></svg>
+                    <svg id="temp-connection-layer" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:25;"></svg>
+                </div>
+                <div class="canvas-controls">
+                     <button id="btn-clear-canvas" class="game-btn small" style="padding: 0.5rem; background-color: var(--error);">🗑 Limpiar Todo</button>
+                </div>
+            </div>
+\t
+            <!-- Panel 3: Text -->
+            <div class="text-palette">
+                <h4>Datos / Texto</h4>
+                <div id="text-palette" class="palette-items">
+                    ${exercise.items.sort(() => Math.random() - 0.5).map(item => `
+                        <div class="draggable-text" draggable="true" id="${item.id}">
+                            ${item.text}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls: Top Floating -->
+        <div class="top-right-controls">
+            <div id="fc-feedback" class="feedback-toast" style="display:none;"></div>
+            <button id="btn-check-fc" class="btn-next">Siguiente ➡</button>
+            ${isExpanded ? '<div style="background:rgba(0,0,0,0.5); padding:5px 10px; border-radius:15px; font-size:0.8rem;">Modo Extendido</div>' : ''}
+        </div>
+    `;
+    const canvas = document.getElementById('canvas-area');
+    const canvasWrapper = document.querySelector('.canvas-area-wrapper');
+    const shapePalette = document.getElementById('shape-palette');
+    const textPalette = document.getElementById('text-palette');
+    const tempSvg = document.getElementById('temp-connection-layer');
+    const connSvg = document.getElementById('connections-layer');
+
+    let activeDragShape = null;
+    let dragStartX = 0, dragStartY = 0;
+    let dragOrigL = 0, dragOrigT = 0;
+    let draggedShapeType = null;
+    let draggedTextId = null;
+    let selectedShape = null;
+
+    // Connection Logic State
+    let isConnecting = false;
+    let connectionStartNode = null;
+    let tempLine = null;
+
+    // --- SETUP DRAG from PALETTES ---
+    shapePalette.querySelectorAll('.draggable-shape').forEach(shape => {
+        shape.addEventListener('dragstart', (e) => {
+            draggedShapeType = shape.getAttribute('data-shape');
+            draggedTextId = null;
+        });
+    });
+
+    textPalette.querySelectorAll('.draggable-text').forEach(txt => {
+        txt.addEventListener('dragstart', (e) => {
+            draggedTextId = txt.id;
+            draggedShapeType = null;
+        });
+    });
+
+    canvas.addEventListener('dragover', (e) => e.preventDefault());
+    canvas.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        if (draggedShapeType) {
+            createShapeOnCanvas(draggedShapeType, x, y);
+        }
+    });
+
+    // --- SELECTION & DELETION LOGIC ---
+    canvas.addEventListener('mousedown', (e) => {
+        // Deselect if clicking empty space
+        if (e.target === canvas || e.target.id === 'connections-layer') {
+            selectShape(null);
+        }
+    });
+
+    function selectShape(shape) {
+        if (selectedShape) selectedShape.classList.remove('selected');
+        selectedShape = shape;
+        if (selectedShape) selectedShape.classList.add('selected');
+        canvasWrapper.focus(); // Ensure we capture key events
+    }
+
+    canvasWrapper.addEventListener('keydown', (e) => {
+        if ((e.key === 'Delete' || e.key === 'Backspace') && selectedShape) {
+            deleteShape(selectedShape);
+            selectShape(null);
+        }
+    });
+
+    function deleteShape(shape) {
+        // Remove connections
+        const lines = connSvg.querySelectorAll('line');
+        lines.forEach(line => {
+            if (line.getAttribute('data-from') === shape.id || line.getAttribute('data-to') === shape.id) {
+                line.remove();
+            }
+        });
+        // Remove shape
+        shape.remove();
+        // Return text content to palette if needed? (Simplification: Text is cloned/persistent in palette, so just delete)
+    }
+
+    document.getElementById('btn-clear-canvas').onclick = function () {
+        cleanupListeners();
+        setupFlowchartCanvas(exercise, container, onSuccess);
+    };
+
+    // --- DRAG INSIDE CANVAS ---
+    const SNAP_SIZE = 20;
+
+    function onWindowMouseMove(e) {
+        // 1. Move Shape
+        if (activeDragShape) {
+            if (!document.getElementById('canvas-area')) { cleanupListeners(); return; }
+            e.preventDefault();
+
+            let newLeft = dragOrigL + (e.clientX - dragStartX);
+            let newTop = dragOrigT + (e.clientY - dragStartY);
+
+            newLeft = Math.round(newLeft / SNAP_SIZE) * SNAP_SIZE;
+            newTop = Math.round(newTop / SNAP_SIZE) * SNAP_SIZE;
+
+            activeDragShape.style.left = `${newLeft}px`;
+            activeDragShape.style.top = `${newTop}px`;
+            updateConnections();
+        }
+
+        // 2. Drag Connection Line
+        if (isConnecting && tempLine) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            tempLine.setAttribute('x2', x);
+            tempLine.setAttribute('y2', y);
+        }
+    }
+
+    function onWindowMouseUp(e) {
+        if (activeDragShape) {
+            activeDragShape = null;
+        }
+
+        if (isConnecting) {
+            // Check if dropped on a shape (handled by mouseup on shape)
+            // If we are here, it means we dropped on empty space
+            cancelConnection();
+        }
+    }
+
+    function cleanupListeners() {
+        window.removeEventListener('mousemove', onWindowMouseMove);
+        window.removeEventListener('mouseup', onWindowMouseUp);
+    }
+    window.removeEventListener('mousemove', onWindowMouseMove);
+    window.removeEventListener('mouseup', onWindowMouseUp);
+    window.addEventListener('mousemove', onWindowMouseMove);
+    window.addEventListener('mouseup', onWindowMouseUp);
+
+    // --- CREATE SHAPE ---
+    function createShapeOnCanvas(type, x, y) {
+        const div = document.createElement('div');
+        div.className = `canvas-shape shape-${type}`;
+
+        x = Math.round(x / SNAP_SIZE) * SNAP_SIZE;
+        y = Math.round(y / SNAP_SIZE) * SNAP_SIZE;
+
+        div.style.left = `${x - 40}px`;
+        div.style.top = `${y - 20}px`;
+        div.setAttribute('data-shape-type', type);
+        div.setAttribute('id', `node-${Date.now()}-${Math.floor(Math.random() * 1000)}`);
+
+        const textCont = document.createElement('div');
+        textCont.className = 'shape-text-area';
+        div.appendChild(textCont);
+
+        // Add Connection Anchors
+        ['top', 'right', 'bottom', 'left'].forEach(pos => {
+            const anchor = document.createElement('div');
+            anchor.className = `connection-anchor anchor-${pos}`;
+            div.appendChild(anchor);
+
+            // Start Connection
+            anchor.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                startConnection(div, e);
+            });
+        });
+
+        // Drop Text
+        div.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (draggedTextId) div.classList.add('drag-over');
+        });
+        div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
+        div.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            div.classList.remove('drag-over');
+            if (draggedTextId) {
+                const textEl = document.getElementById(draggedTextId);
+                if (textEl) {
+                    textCont.innerHTML = '';
+                    textCont.appendChild(textEl.cloneNode(true)); // Clone to allow reuse if text deleted
+                    div.setAttribute('data-content-id', draggedTextId);
+                    // Reset styles for the cloned element inside shape
+                    const inside = textCont.firstElementChild;
+                    inside.style.position = 'static';
+                    inside.style.border = 'none';
+                    inside.style.background = 'transparent';
+                    inside.className = '';
+                }
+            }
+        });
+
+        // Selection
+        div.addEventListener('mousedown', (e) => {
+            if (e.button === 0 && !isConnecting) {
+                e.stopPropagation();
+                selectShape(div);
+                activeDragShape = div;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                dragOrigL = div.offsetLeft;
+                dragOrigT = div.offsetTop;
+            }
+        });
+
+        // End Connection (Receive)
+        div.addEventListener('mouseup', (e) => {
+            if (isConnecting && connectionStartNode && connectionStartNode !== div) {
+                e.stopPropagation();
+                createConnection(connectionStartNode, div);
+                cancelConnection();
+            }
+        });
+
+        canvas.appendChild(div);
+        selectShape(div); // Auto-select new shape
+    }
+
+    // --- CONNECTION LOGIC ---
+    function startConnection(sourceNode, e) {
+        isConnecting = true;
+        connectionStartNode = sourceNode;
+
+        // Create Temp Line
+        tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        tempLine.setAttribute('stroke', '#fff');
+        tempLine.setAttribute('stroke-width', '2');
+        tempLine.setAttribute('stroke-dasharray', '5,5');
+
+        // Center of source
+        const x = sourceNode.offsetLeft + sourceNode.offsetWidth / 2;
+        const y = sourceNode.offsetTop + sourceNode.offsetHeight / 2;
+
+        tempLine.setAttribute('x1', x);
+        tempLine.setAttribute('y1', y);
+        tempLine.setAttribute('x2', x); // Start with 0 length
+        tempLine.setAttribute('y2', y);
+
+        tempSvg.appendChild(tempLine);
+    }
+
+    function cancelConnection() {
+        isConnecting = false;
+        connectionStartNode = null;
+        if (tempLine) {
+            tempLine.remove();
+            tempLine = null;
+        }
+    }
+
+    function createConnection(node1, node2) {
+        if (connSvg.querySelector(`line[data-from="${node1.id}"][data-to="${node2.id}"]`)) return;
+
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('stroke', '#00e5ff');
+        line.setAttribute('stroke-width', '3');
+        line.setAttribute('marker-end', 'url(#arrowhead)');
+        line.setAttribute('data-from', node1.id);
+        line.setAttribute('data-to', node2.id);
+        updateLineCoords(line, node1, node2);
+        connSvg.appendChild(line);
+    }
+
+    function updateLineCoords(line, n1, n2) {
+        if (!n1 || !n2) return;
+        const x1 = n1.offsetLeft + n1.offsetWidth / 2;
+        const y1 = n1.offsetTop + n1.offsetHeight / 2;
+        const x2 = n2.offsetLeft + n2.offsetWidth / 2;
+        const y2 = n2.offsetTop + n2.offsetHeight / 2;
+
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2);
+        line.setAttribute('y2', y2);
+    }
+
+    function updateConnections() {
+        if (!connSvg) return;
+        if (!connSvg.querySelector('defs')) {
+            connSvg.innerHTML = `
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#00e5ff" />
+                    </marker>
+                </defs>
+            ` + connSvg.innerHTML;
+        }
+
+        connSvg.querySelectorAll('line').forEach(line => {
+            const n1 = document.getElementById(line.getAttribute('data-from'));
+            const n2 = document.getElementById(line.getAttribute('data-to'));
+            if (n1 && n2) updateLineCoords(line, n1, n2);
+            else line.remove();
+        });
+    }
+
+    // --- VALIDATION ---
+    document.getElementById('btn-check-fc').onclick = () => {
+        const feedback = document.getElementById('fc-feedback');
+        const nodes = Array.from(canvas.querySelectorAll('.canvas-shape')).map(s => ({
+            id: s.id,
+            contentId: s.getAttribute('data-content-id'),
+        }));
+        const edges = Array.from(connSvg.querySelectorAll('line')).map(l => ({
+            from: l.getAttribute('data-from'),
+            to: l.getAttribute('to')
+        }));
+
+        const nodeMap = {};
+        nodes.forEach(n => nodeMap[n.id] = n.contentId);
+
+        // Check 1: Empty or Missing Content
+        if (nodes.length === 0) {
+            feedback.innerHTML = "<span>⚪</span> Respuesta vacía";
+            feedback.className = "feedback-toast incorrect";
+            feedback.style.display = 'block';
+
+            document.getElementById('btn-check-fc').disabled = true;
+            setTimeout(() => {
+                feedback.style.display = 'none';
+                if (onSuccess) onSuccess('empty');
+            }, 2000);
+            return;
+        }
+
+        // Check 2: Connectivity and Logic
+        let correctEdgesCount = 0;
+        const requiredEdges = exercise.solution.edges;
+
+        requiredEdges.forEach(req => {
+            const [fromContent, toContent] = req;
+            const exists = edges.some(edge => {
+                return nodeMap[edge.from] === fromContent && nodeMap[edge.to] === toContent;
+            });
+            if (exists) correctEdgesCount++;
+        });
+
+        // Determine Pass/Fail strictly
+        // For "flowchart-free", we require key connections.
+        // If the user has roughly the right edges, we give it to them, or if strict match needed:
+        const isPerfect = correctEdgesCount === requiredEdges.length;
+        // Looser check: at least 80% edges correct? Or just strict as per user request for "correct/incorrect".
+        // Let's stick to strict or high threshold.
+        const threshold = Math.ceil(requiredEdges.length * 0.8);
+        const isPass = correctEdgesCount >= threshold;
+
+        feedback.style.display = 'block';
+        document.getElementById('btn-check-fc').disabled = true;
+
+        if (isPass) {
+            feedback.innerHTML = "<span>✔</span> ¡Correcto!";
+            feedback.className = "feedback-toast correct";
+            setTimeout(() => {
+                feedback.style.display = 'none';
+                if (onSuccess) onSuccess('correct');
+            }, 2000);
+        } else {
+            feedback.innerHTML = `<span>✖</span> Incorrecto`;
+            feedback.className = "feedback-toast incorrect";
+            setTimeout(() => {
+                feedback.style.display = 'none';
+                if (onSuccess) onSuccess('incorrect');
+            }, 2000);
+        }
+    };
+}
+
+// 3. Quiz Diagram Logic
+function setupQuizDiagram(exercise, container, onSuccess) {
+    let hasAnswered = false;
+    const diagramHTML = `
+        <div class="static-diagram">
+            <div class="node-oval">E</div>
+            <div class="arrow">⬇</div>
+            <div class="node-diamond"><span>>2</span></div>
+            <div class="path-split">
+                <div class="path-left">
+                    <div class="label-yes">Sí</div>
+                    <div class="arrow-horiz">⬅</div>
+                    <div class="arrow-vert">⬇ (+2)</div>
+                    <div class="node-diamond">° 3</div>
+                    <div class="path-split-inner">
+                        <div class="path-inner-left">
+                           <div class="label-no">No</div>
+                           <div class="arrow-horiz">⬅</div>
+                           <div class="arrow-vert">⬇ (-1)</div>
+                           <div class="node-diamond">° 2</div>
+                           <div class="path-return">
+                                <div class="label-yes">Sí</div>
+                                <div class="arrow-ret">⤴ (-1)</div>
+                           </div>
+                           <div class="path-inner-right">
+                                <div class="label-no">No</div>
+                                <div class="arrow-right">➡</div>
+                           </div>
+                        </div>
+                        <div class="path-inner-right">
+                            <div class="label-yes">Sí</div>
+                            <div class="arrow-right">➡</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="path-right">
+                    <div class="label-no">No</div>
+                    <div class="arrow-vert">⬇ (+1)</div>
+                    <div class="line-vert"></div>
+                </div>
+            </div>
+            <div class="merge-point"></div>
+            <div class="arrow">⬇ (+2)</div>
+            <div class="arrow">⬇ (+3)</div>
+            <div class="node-oval">S</div>
+        </div>
+    `;
+
+    container.innerHTML = `
+        <div class="quiz-diagram-container" style="display:flex; justify-content:center; margin-bottom: 2rem;">
+            ${diagramHTML}
+        </div>
+        <div class="game-question">
+            <h3>${exercise.question}</h3>
+        </div>
+        <div class="game-options">
+            ${exercise.options.map((opt, idx) => `
+                <button class="game-btn option-btn" data-index="${idx}">${opt}</button>
+            `).join('')}
+        </div>
+        <div id="quiz-img-feedback" class="feedback-msg"></div>
+    `;
+
+    const btns = container.querySelectorAll('.option-btn');
+    const feedback = document.getElementById('quiz-img-feedback');
+
+    btns.forEach(btn => {
+        btn.onclick = () => {
+            if (hasAnswered) return;
+            hasAnswered = true;
+            const selected = parseInt(btn.getAttribute('data-index'));
+            btns.forEach(b => b.disabled = true);
+
+            if (selected === exercise.correct) {
+                feedback.innerHTML = "<span>✔</span> ¡Correcto!";
+                feedback.className = "feedback-msg correct";
+                btn.style.backgroundColor = 'var(--success)';
+                if (onSuccess) onSuccess('correct');
+            } else {
+                feedback.innerHTML = "<span>✖</span> Incorrecto";
+                feedback.className = "feedback-msg incorrect";
+                btn.style.backgroundColor = 'var(--error)';
+                btns[exercise.correct].style.backgroundColor = 'var(--success)';
+                if (onSuccess) onSuccess('incorrect');
+            }
+        };
+    });
+}
+
+// 4. Quiz Logic
+function setupQuiz(game, container) {
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    function showQuestion() {
+        const q = game.questions[currentQuestionIndex];
+        container.innerHTML = `
+            <div class="game-question">
+                <p>Pregunta ${currentQuestionIndex + 1}/${game.questions.length}</p>
+                <h3>${q.question}</h3>
+            </div>
+            <div class="game-options">
+                ${q.options.map((opt, idx) => `
+                    <button class="game-btn" onclick="handleQuizAnswer(${idx}, ${q.correct})">${opt}</button>
+                `).join('')}
+            </div>
+            <div id="feedback" class="feedback-msg"></div>
+        `;
+    }
+
+    window.handleQuizAnswer = (selected, correct) => {
+        const feedback = document.getElementById('feedback');
+        const btns = document.querySelectorAll('.game-btn');
+
+        btns.forEach(btn => btn.disabled = true);
+
+        if (selected === correct) {
+            feedback.innerHTML = "<span>✔</span> ¡Correcto!";
+            feedback.className = "feedback-msg correct";
+            score++;
+        } else {
+            feedback.innerHTML = "<span>✖</span> Incorrecto";
+            feedback.className = "feedback-msg incorrect";
+            btns[selected].style.backgroundColor = 'var(--error)';
+        }
+        btns[correct].style.backgroundColor = 'var(--success)';
+
+        setTimeout(() => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < game.questions.length) {
+                showQuestion();
+            } else {
+                handleLevelComplete(score, game.questions.length);
+            }
+        }, 2000);
+    };
+
+    showQuestion();
+}
+
+// 5. Match Logic
+function setupMatch(game, container, onComplete) {
+    let selectedEs = null;
+    let selectedEn = null;
+    let matches = 0;
+    const esTerms = [...game.pairs].sort(() => Math.random() - 0.5);
+    const enTerms = [...game.pairs].sort(() => Math.random() - 0.5);
+
+    container.innerHTML = `
+        <p>Empareja la palabra en español con su traducción en inglés.</p>
+        <div class="match-grid" style="display:flex; justify-content:space-around; gap:2rem;">
+            <div id="col-es" style="display:flex; flex-direction:column; gap:1rem; flex:1"></div>
+            <div id="col-en" style="display:flex; flex-direction:column; gap:1rem; flex:1"></div>
+        </div>
+        <div id="match-feedback" class="feedback-msg" style="margin-top:1rem;"></div>
+    `;
+
+    const colEs = document.getElementById('col-es');
+    const colEn = document.getElementById('col-en');
+
+    esTerms.forEach(pair => {
+        const btn = document.createElement('button');
+        btn.className = 'game-btn';
+        btn.textContent = pair.es;
+        btn.dataset.term = pair.es;
+        btn.onclick = () => selectTerm('es', btn, pair.es);
+        colEs.appendChild(btn);
+    });
+
+    enTerms.forEach(pair => {
+        const btn = document.createElement('button');
+        btn.className = 'game-btn';
+        btn.textContent = pair.en;
+        btn.dataset.term = pair.en;
+        const originalPair = game.pairs.find(p => p.en === pair.en);
+        btn.dataset.match = originalPair.es;
+
+        btn.onclick = () => selectTerm('en', btn, originalPair.es);
+        colEn.appendChild(btn);
+    });
+
+    function selectTerm(lang, btn, matchKey) {
+        if (btn.classList.contains('matched')) return;
+        const col = lang === 'es' ? colEs : colEn;
+        Array.from(col.children).forEach(b => {
+            if (!b.classList.contains('matched')) b.style.borderColor = 'var(--primary-color)';
+        });
+        btn.style.borderColor = '#fff';
+        if (lang === 'es') selectedEs = { btn, key: matchKey };
+        else selectedEn = { btn, key: matchKey };
+        checkMatch();
+    }
+
+    function checkMatch() {
+        if (selectedEs && selectedEn) {
+            const feedback = document.getElementById('match-feedback');
+            if (selectedEs.key === selectedEn.key) {
+                feedback.textContent = "¡Match! ✔";
+                feedback.className = "feedback-msg correct";
+                selectedEs.btn.classList.add('matched');
+                selectedEn.btn.classList.add('matched');
+                selectedEs.btn.style.backgroundColor = 'var(--success)';
+                selectedEn.btn.style.backgroundColor = 'var(--success)';
+                matches++;
+            } else {
+                feedback.textContent = "Inténtalo de nuevo";
+                feedback.className = "feedback-msg incorrect";
+                const b1 = selectedEs.btn;
+                const b2 = selectedEn.btn;
+                b1.style.borderColor = 'var(--error)';
+                b2.style.borderColor = 'var(--error)';
+                setTimeout(() => {
+                    b1.style.borderColor = 'var(--primary-color)';
+                    b2.style.borderColor = 'var(--primary-color)';
+                }, 500);
+            }
+            selectedEs = null;
+            selectedEn = null;
+            if (matches === game.pairs.length) {
+                setTimeout(() => {
+                    if (onComplete) onComplete('correct');
+                    else handleLevelComplete(matches, game.pairs.length);
+                }, 1000);
+            }
+        }
+    }
+}
+
+// 6. Speech Practice Engine (New - Exam Mode + Manual Next)
+function setupSpeechPractice(game, container, onComplete) {
+    const targetText = game.text || "Hello world";
+
+    container.innerHTML = `
+        <div class="speech-container fade-in">
+            <h3 style="color:var(--secondary-color); margin-bottom:0.3rem; font-size:1.2rem;">Evaluación de Pronunciación:</h3>
+            <p style="color:#aaa; font-size:0.9rem; margin-bottom:1rem;">Lee la frase en voz alta. Presiona <strong style="color:var(--error);">STOP</strong> cuando termines.</p>
+
+            <blockquote id="target-quote" style="font-size: 1.2rem; margin: 1rem auto; max-width:700px; border-left: 4px solid var(--primary-color); padding: 1rem; background:rgba(124, 77, 255, 0.1); border-radius:8px; color: var(--text-highlight); line-height:1.6;">
+                "${targetText}"
+            </blockquote>
+
+            <div style="margin: 1.5rem 0; position:relative;">
+                <div class="mic-wrapper" style="margin:0 auto;">
+                    <button id="btn-mic" class="mic-button">
+                        <i class="fas fa-microphone" style="font-size:2.5rem;"></i>
+                    </button>
+                    <div class="mic-ring"></div>
+                </div>
+
+                <!-- Recording Timer -->
+                <div id="recording-timer" style="position:absolute; top:-35px; left:50%; transform:translateX(-50%); font-size:1.3rem; font-weight:bold; color:var(--error); opacity:0; transition:opacity 0.3s;">
+                    <i class="fas fa-circle" style="font-size:0.7rem; animation:blink 1s infinite;"></i> <span id="timer-display">0:00</span>
+                </div>
+
+                <!-- Instruction Label -->
+                <p id="mic-instruction" style="margin-top:1rem; font-size:1rem; color:var(--text-secondary); font-weight:500;">
+                    Presiona el micrófono para comenzar
+                </p>
+            </div>
+
+            <div class="audio-visualizer" id="visualizer" style="margin:1rem auto; justify-content:center;">
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+
+            <div class="transcription-box" id="transcription-box" style="margin:1rem auto; max-width:700px; min-height:60px; padding:1rem; background:rgba(255,255,255,0.05); border-radius:12px; border:2px solid rgba(124, 77, 255, 0.3);">
+                <p id="user-speech" style="color:var(--text-secondary); font-size:1rem; margin:0;">Tu transcripción aparecerá aquí...</p>
+            </div>
+
+            <button id="btn-next-speech" class="game-btn fade-in hidden" style="margin-top:1.5rem; background:linear-gradient(135deg, var(--primary-color), #6200ea); padding:1rem 2.5rem; font-size:1rem; border-radius:50px; box-shadow:0 8px 20px rgba(124, 77, 255, 0.4); transition:all 0.3s;">
+                Siguiente Pregunta <i class="fas fa-arrow-right" style="margin-left:0.5rem;"></i>
+            </button>
+        </div>
+    `;
+
+    const btnMic = document.getElementById('btn-mic');
+    const btnNext = document.getElementById('btn-next-speech');
+    const userSpeech = document.getElementById('user-speech');
+    const visualizer = document.getElementById('visualizer');
+    const micInstruction = document.getElementById('mic-instruction');
+    const recordingTimer = document.getElementById('recording-timer');
+    const timerDisplay = document.getElementById('timer-display');
+
+    let timerInterval = null;
+    let seconds = 0;
+
+    // Speech API Setup
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        userSpeech.textContent = "⚠️ Tu navegador no soporta reconocimiento de voz.";
+        userSpeech.style.color = "var(--error)";
+        btnMic.disabled = true;
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    let isRecording = false;
+    let finalTranscript = '';
+    let hasRecorded = false; // To prevent multiple logic runs
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let audioBlob = null;
+
+    btnMic.onclick = () => {
+        if (!isRecording) {
+            // Start Recording
+            recognition.start();
+
+            // Start Audio Recording (MediaRecorder)
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(stream => {
+                        mediaRecorder = new MediaRecorder(stream);
+                        audioChunks = [];
+                        mediaRecorder.ondataavailable = event => {
+                            audioChunks.push(event.data);
+                        };
+                        mediaRecorder.onstop = () => {
+                            audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        };
+                        mediaRecorder.start();
+                    }).catch(err => console.error("MediaRecorder Error:", err));
             }
 
-            currentIdx++;
-            setTimeout(loadEx, 800);
-        };
+            isRecording = true;
+            hasRecorded = false;
 
-        if (ex.type === 'quiz-item') setupQuizItem(ex, container, onDone);
-        else if (ex.type === 'builder') setupBuilder(ex, container, onDone);
-        else if (ex.type === 'match') setupMatch(ex, container, onDone);
-        else if (ex.type === 'speech-practice') setupSpeechPractice(ex, container, onDone);
-        else if (ex.type === 'listening-practice') setupListeningPractice(ex, container, onDone);
-        else if (ex.type === 'sorter') setupPseudocodeBuilder(ex, container, onDone);
-        else if (ex.type === 'flowchart-free') setupFlowchartCanvas(ex, container, onDone);
-        else onDone('empty');
-    }
-    loadEx();
-}
+            btnMic.classList.add('recording');
+            btnMic.innerHTML = '<i class="fas fa-stop" style="font-size:2rem;"></i>';
+            visualizer.classList.add('active');
+            micInstruction.textContent = 'Presiona STOP cuando termines de hablar';
+            micInstruction.style.color = 'var(--error)';
 
-async function uploadToCloudinary(blob) {
-    const formData = new FormData();
-    formData.append('file', blob);
-    formData.append('upload_preset', 'Tragalero');
-    try {
-        const res = await fetch('https://api.cloudinary.com/v1_1/dbbjxhvz5/upload', { method: 'POST', body: formData });
-        const data = await res.json();
-        return data.secure_url;
-    } catch (e) { return null; }
-}
+            // Start Timer
+            seconds = 0;
+            recordingTimer.style.opacity = '1';
+            timerInterval = setInterval(() => {
+                seconds++;
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                timerDisplay.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+            }, 1000);
 
-async function saveExamResults(results, total) {
-    let correct = 0, scoreSum = 0, audioUrl = null;
-    for (let r of results) {
-        if (r.status === 'correct') { correct++; scoreSum += (r.score !== undefined ? r.score : 100); }
-        if (r.details && r.details.audioBlob) { audioUrl = await uploadToCloudinary(r.details.audioBlob); delete r.details.audioBlob; }
-    }
-    const score = total > 0 ? Math.round(scoreSum / total) : 0;
-    const record = {
-        candidate_name: candidateInfo.name, evaluator_name: candidateInfo.evaluator, target_position: candidateInfo.position,
-        exam_type: currentState.subject, score_percentage: score, correct_count: correct, incorrect_count: total - correct,
-        details: JSON.stringify({ metadata: candidateInfo, results }), audio_url: audioUrl
+            userSpeech.textContent = "";
+            finalTranscript = "";
+            btnNext.classList.add('hidden');
+        } else {
+            // Stop Recording
+            recognition.stop();
+
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+
+            isRecording = false;
+
+            btnMic.classList.remove('recording');
+            btnMic.innerHTML = '<i class="fas fa-microphone" style="font-size:2.5rem;"></i>';
+            visualizer.classList.remove('active');
+            micInstruction.textContent = 'Grabación completada';
+            micInstruction.style.color = 'var(--success)';
+
+            // Stop Timer
+            clearInterval(timerInterval);
+            recordingTimer.style.opacity = '0';
+
+            // Show Next Button
+            btnNext.classList.remove('hidden');
+        }
     };
-    const { data, error } = await _supabase.from('exam_results').insert([record]).select();
-    if (!error && data[0]) {
-        const answers = results.map((r, i) => ({ exam_id: data[0].id, question_number: i + 1, status: r.status }));
-        await _supabase.from('exam_answers').insert(answers);
-    }
-}
 
-async function handleLevelComplete(results, total) {
-    await saveExamResults(results, total);
-    const score = Math.round((results.filter(r => r.status === 'correct').length / total) * 100);
-    const modal = document.getElementById('level-modal');
-    modal.querySelector('.modal-content').innerHTML = `
-        <h2 class="modal-title">${score >= 60 ? '¡Nivel Completado!' : '¡Buen Intento!'}</h2>
-        <div class="modal-score" style="font-size: 4rem;">${score}%</div>
-        <div class="modal-actions">
-           <button class="modal-btn" onclick="goHome()">Menú Principal</button>
-           <button class="modal-btn" style="background:var(--accent-color)" onclick="location.href='score.html'">Ver Resultados</button>
-        </div>`;
-    modal.classList.add('active');
-}
+    btnNext.onclick = () => {
+        // Calculate and Finish
+        const similarity = calculateLevenshteinSimilarity(targetText, finalTranscript);
+        const status = similarity >= 60 ? 'correct' : 'incorrect';
 
-// --- GAME ENGINES (FULL IMPLEMENTATION) ---
-
-function setupQuizItem(ex, container, onDone) {
-    container.innerHTML = `<div class="game-question"><h3>${ex.question}</h3></div><div class="game-options">${ex.options.map((o, i) => `<button class="game-btn opt" data-i="${i}">${o}</button>`).join('')}</div>`;
-    container.querySelectorAll('.opt').forEach(b => b.onclick = () => {
-        const isCorrect = parseInt(b.dataset.i) === ex.correct;
-        b.style.background = isCorrect ? 'var(--success)' : 'var(--error)';
-        onDone(isCorrect);
-    });
-}
-
-function setupBuilder(ex, container, onDone) {
-    let query = []; const challenge = ex.challenges[0];
-    container.innerHTML = `<h3>Misión: ${challenge.goal}</h3><div id="q-disp" style="background:#000;color:#0f0;padding:1rem;margin:1rem 0;font-family:monospace;border-radius:4px;min-height:3rem;"></div><div class="game-options">${challenge.blocks.map(b => `<button class="game-btn blk">${b}</button>`).join('')}</div><div style="display:flex;gap:1rem;justify-content:center;margin-top:1rem;"><button class="game-btn" onclick="query=[];document.getElementById('q-disp').textContent=''">Borrar</button><button class="game-btn" style="border-color:var(--success)" id="chk-q">Verificar</button></div>`;
-    container.querySelectorAll('.blk').forEach(b => b.onclick = () => { query.push(b.textContent); document.getElementById('q-disp').textContent = query.join(' '); });
-    container.querySelector('#chk-q').onclick = () => onDone(query.join(' ').trim() === challenge.correct);
-}
-
-function setupMatch(ex, container, onDone) {
-    let s1 = null, s2 = null, count = 0;
-    const es = [...ex.pairs].sort(() => Math.random() - 0.5), en = [...ex.pairs].sort(() => Math.random() - 0.5);
-    container.innerHTML = `<div class="match-grid" style="display:flex;gap:2rem;"><div id="col-es" style="flex:1;display:flex;flex-direction:column;gap:10px;"></div><div id="col-en" style="flex:1;display:flex;flex-direction:column;gap:10px;"></div></div>`;
-    es.forEach(p => { const b = document.createElement('button'); b.className = 'game-btn'; b.textContent = p.es; b.onclick = () => { s1 = { b, k: p.es }; check(); }; container.querySelector('#col-es').appendChild(b); });
-    en.forEach(p => { const b = document.createElement('button'); b.className = 'game-btn'; b.textContent = p.en; b.onclick = () => { s2 = { b, k: ex.pairs.find(x => x.en === p.en).es }; check(); }; container.querySelector('#col-en').appendChild(b); });
-    function check() { if (s1 && s2) { if (s1.k === s2.k) { s1.b.style.background = s2.b.style.background = 'var(--success)'; count++; } else { s1.b.style.border = s2.b.style.border = '2px solid var(--error)'; setTimeout(() => { s1.b.style.border = s2.b.style.border = ''; }, 500); } s1 = s2 = null; if (count === ex.pairs.length) onDone(true); } }
-}
-
-function setupSpeechPractice(ex, container, onDone) {
-    container.innerHTML = `<div class="speech-container"><h3>Pronuncia:</h3><blockquote style="font-size:1.2rem;padding:1rem;background:rgba(255,255,255,0.05);border-left:4px solid var(--primary-color);">${ex.text}</blockquote><button id="mic" class="mic-button"><i class="fas fa-microphone"></i></button><p id="tx">Toca el micro para empezar</p><button id="nx" class="game-btn hidden">Siguiente Pregunta ➡</button></div>`;
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) { onDone(true); return; }
-    const rec = new SpeechRecognition(); rec.lang = 'en-US'; let final = "", blob = null;
-    document.getElementById('mic').onclick = () => {
-        rec.start(); document.getElementById('tx').textContent = "Escuchando...";
-        navigator.mediaDevices.getUserMedia({ audio: true }).then(s => {
-            const mr = new MediaRecorder(s); const ch = [];
-            mr.ondataavailable = e => ch.push(e.data); mr.onstop = () => blob = new Blob(ch, { type: 'audio/webm' });
-            mr.start(); setTimeout(() => { mr.stop(); rec.stop(); }, 5000);
+        onComplete({
+            type: 'speech-practice',
+            status: status,
+            score: similarity,
+            details: {
+                transcript: finalTranscript,
+                target: targetText,
+                audioBlob: audioBlob // Store blob to upload later
+            }
         });
     };
-    rec.onresult = e => { final = e.results[0][0].transcript; document.getElementById('tx').textContent = `Dijiste: "${final}"`; document.getElementById('nx').classList.remove('hidden'); };
-    document.getElementById('nx').onclick = () => onDone({ status: 'correct', score: 100, details: { transcript: final, target: ex.text, audioBlob: blob } });
+
+    recognition.onresult = (event) => {
+        let interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+            } else {
+                interimTranscript += event.results[i][0].transcript;
+            }
+        }
+        userSpeech.textContent = finalTranscript + interimTranscript;
+    };
+
+    recognition.onerror = (event) => {
+        console.error("Speech Error:", event.error);
+
+        if (userSpeech) {
+            userSpeech.textContent = "Error de reconocimiento: " + event.error;
+            userSpeech.style.color = "var(--error)";
+        }
+
+        if (micInstruction) {
+            micInstruction.textContent = "Hubo un error. Inténtalo de nuevo o continúa.";
+            micInstruction.style.color = "var(--error)";
+        }
+
+        if (btnNext) {
+            btnNext.classList.remove('hidden');
+        }
+
+        if (visualizer) {
+            visualizer.classList.remove('active');
+        }
+    }
 }
 
-function setupListeningPractice(ex, container, onDone) {
-    let plays = 2; container.innerHTML = `<div class="speech-container"><h3>Listening</h3><button id="pl" class="mic-button"><i class="fas fa-volume-up"></i></button><p>Escuchas: <span id="pv">${plays}</span></p><div class="game-options" style="margin-top:1rem;">${ex.options.map((o, i) => `<button class="game-btn lop" data-i="${i}">${o}</button>`).join('')}</div></div>`;
-    const play = () => { if (plays > 0) { if (ex.audio_url) new Audio(ex.audio_url).play(); else { const u = new SpeechSynthesisUtterance(ex.script); u.lang = 'en-US'; window.speechSynthesis.speak(u); } plays--; document.getElementById('pv').textContent = plays; } };
-    document.getElementById('pl').onclick = play;
-    container.querySelectorAll('.lop').forEach(b => b.onclick = () => onDone(parseInt(b.dataset.i) === ex.correct));
-}
+// 6.5. Listening Practice Engine (New - TTS Based)
+function setupListeningPractice(game, container, onComplete) {
+    const script = game.script || "Remote work offers flexibility, but the main drawback is the loss of company culture and spontaneous collaboration.";
+    const question = game.question || "According to the speaker, what is the main drawback of remote work?";
+    const options = game.options || [
+        "Reduced productivity",
+        "Lack of flexibility",
+        "Loss of company culture and spontaneous collaboration",
+        "Increased costs for the company"
+    ];
+    const correctIndex = game.correct || 2;
 
-function setupPseudocodeBuilder(ex, container, onDone) {
-    const keywords = ['Inicio', 'Fin', 'Leer', 'Escribir', 'Si', 'Sino', 'FinSi', 'Para', 'FinPara', 'Repetir', 'Hasta', 'Proceso', 'Según', 'Caso', 'FinSegún'];
-    container.innerHTML = `<div class="exercise-header"><h2>${ex.title}</h2><p>${ex.instruction}</p></div><div class="pseudocode-container"><div class="ps-palette"><h4>Bloques</h4>${keywords.map(k => `<div class="ps-keyword" draggable="true" data-k="${k}">${k}</div>`).join('')}</div><div id="ps-ed" class="ps-editor" style="min-height:200px; border:2px dashed #444;"></div></div><button id="ck-ps" class="game-btn" style="margin-top:1rem;">Verificar</button>`;
-    const ed = container.querySelector('#ps-ed');
-    container.querySelectorAll('.ps-keyword').forEach(k => k.addEventListener('dragstart', e => e.dataTransfer.setData('text', k.dataset.k)));
-    ed.addEventListener('dragover', e => e.preventDefault());
-    ed.addEventListener('drop', e => {
-        e.preventDefault(); const k = e.dataTransfer.getData('text');
-        const d = document.createElement('div'); d.className = 'ps-line'; d.innerHTML = `<span>${k}</span><input type="text" style="background:transparent;border:none;border-bottom:1px solid #555;color:#fff;margin-left:10px;flex:1;"><span onclick="this.parentElement.remove()" style="cursor:pointer;margin-left:10px;">×</span>`;
-        ed.appendChild(d);
+    let playsLeft = 2;
+    let hasAnswered = false;
+
+    container.innerHTML = `
+        <div class="speech-container fade-in">
+            <h3 style="color:var(--secondary-color); margin-bottom:0.3rem; font-size:1.2rem;">${game.title || 'Practice: Simulated Listening'}</h3>
+            <p style="color:#aaa; font-size:0.9rem; margin-bottom:1rem;">Listen to the recording and answer the question. You can only listen twice.</p>
+
+            <div style="margin: 1.5rem 0;">
+                <div class="mic-wrapper" style="margin:0 auto;">
+                    <button id="btn-play-audio" class="mic-button">
+                        <i class="fas fa-volume-up" style="font-size:2.5rem;"></i>
+                    </button>
+                    <div class="mic-ring"></div>
+                </div>
+            </div>
+
+            <div class="audio-visualizer" id="visualizer" style="margin:1rem auto; justify-content:center;">
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+
+            <p style="font-size:1.1rem; margin:1rem 0; color:var(--text-secondary);">
+                🔊 Plays left: <span id="plays-counter" style="color:var(--accent-color); font-weight:bold; font-size:1.2rem;">${playsLeft}</span>
+            </p>
+
+            <div style="margin-top:1.5rem; width:100%; max-width:700px; margin-left:auto; margin-right:auto;">
+                <h4 style="color:var(--text-highlight); margin-bottom:1rem; font-size:1.1rem; line-height:1.5;">${question}</h4>
+                <div id="options-container" style="display:flex; flex-direction:column; gap:0.8rem;">
+                    ${options.map((opt, idx) => `
+                        <button class="game-btn listening-option" data-index="${idx}" style="text-align:left; padding:1rem 1.2rem; font-size:0.95rem; border-radius:12px; transition:all 0.3s; border:2px solid rgba(124, 77, 255, 0.3);">
+                            ${opt}
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div id="listening-feedback" class="feedback-msg" style="margin-top:1.5rem; font-size:1rem;"></div>
+        </div>
+    `;
+
+    const btnPlay = document.getElementById('btn-play-audio');
+    const visualizer = document.getElementById('visualizer');
+    const playsCounter = document.getElementById('plays-counter');
+    const feedback = document.getElementById('listening-feedback');
+    const optionButtons = container.querySelectorAll('.listening-option');
+
+    // Text-to-Speech Setup
+    const synth = window.speechSynthesis;
+
+    btnPlay.onclick = () => {
+        if (playsLeft <= 0) {
+            feedback.textContent = "No more plays available.";
+            feedback.className = "feedback-msg incorrect";
+            return;
+        }
+
+        if (synth.speaking) return; // Already playing
+
+        const utterance = new SpeechSynthesisUtterance(script);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.9;
+
+        utterance.onstart = () => {
+            btnPlay.classList.add('recording');
+            visualizer.classList.add('active');
+        };
+
+        utterance.onend = () => {
+            btnPlay.classList.remove('recording');
+            visualizer.classList.remove('active');
+            playsLeft--;
+            playsCounter.textContent = playsLeft;
+
+            if (playsLeft === 0) {
+                btnPlay.disabled = true;
+                btnPlay.style.opacity = '0.5';
+                btnPlay.style.cursor = 'not-allowed';
+            }
+        };
+
+        synth.speak(utterance);
+    };
+
+    optionButtons.forEach((btn, idx) => {
+        btn.onclick = () => {
+            if (hasAnswered) return;
+            hasAnswered = true;
+
+            optionButtons.forEach(b => b.disabled = true);
+
+            if (idx === correctIndex) {
+                btn.style.background = 'var(--success)';
+                feedback.textContent = "✓ Correct!";
+                feedback.className = "feedback-msg correct";
+
+                setTimeout(() => onComplete('correct'), 1000);
+            } else {
+                btn.style.background = 'var(--error)';
+                optionButtons[correctIndex].style.background = 'var(--success)';
+                feedback.textContent = "✗ Incorrect. The correct answer is highlighted.";
+                feedback.className = "feedback-msg incorrect";
+
+                setTimeout(() => onComplete('incorrect'), 2000);
+            }
+        };
     });
-    document.getElementById('ck-ps').onclick = () => onDone(true);
 }
 
-function setupFlowchartCanvas(ex, container, onDone) {
-    container.innerHTML = `<div style="padding:2rem;text-align:center;"><h3>Diagrama de Flujo</h3><p>${ex.instruction}</p><div style="border:2px dashed #444; padding:2rem; margin:1rem 0; border-radius:12px; background:rgba(0,0,0,0.2)">[Área de Diagrama Interactivo]</div><button class="game-btn" onclick="onDone(true)">Completar Desafío</button></div>`;
-    window.onDone = onDone;
+// Levenshtein Distance Helper (String Similarity)
+function calculateLevenshteinSimilarity(s1, s2) {
+    const longer = s1.length > s2.length ? s1 : s2;
+    const shorter = s1.length > s2.length ? s2 : s1;
+    const updateS1 = longer.toLowerCase().replace(/[^a-z0-9]/g, ''); // Remove punctuation
+    const updateS2 = shorter.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    if (updateS1.length === 0) return 0; // Both empty
+
+    const costs = new Array();
+    for (let i = 0; i <= updateS1.length; i++) {
+        let lastValue = i;
+        for (let j = 0; j <= updateS2.length; j++) {
+            if (i == 0) costs[j] = j;
+            else {
+                if (j > 0) {
+                    let newValue = costs[j - 1];
+                    if (updateS1.charAt(i - 1) != updateS2.charAt(j - 1))
+                        newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                    costs[j - 1] = lastValue;
+                    lastValue = newValue;
+                }
+            }
+        }
+        if (i > 0) costs[updateS2.length] = lastValue;
+    }
+
+    const distance = costs[updateS2.length];
+    return Math.round((1.0 - distance / updateS1.length) * 100);
+}
+
+// 7. Builder Logic (SQL)
+function setupBuilder(game, container, onComplete) {
+    let currentChallengeIndex = 0;
+    let currentQuery = [];
+    let internalCorrect = 0;
+
+    function showChallenge() {
+        const challenge = game.challenges[currentChallengeIndex];
+        currentQuery = [];
+
+        container.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>Misión: ${challenge.goal}</h3>
+            </div>
+
+            <div id="query-display" style="background:#000; color:#0f0; padding:1rem; margin:1rem 0; min-height:3rem; font-family:monospace; border-radius:4px;"></div>
+            <div id="blocks-area" class="game-options">
+                ${challenge.blocks.sort(() => Math.random() - 0.5).map(block => `
+                    <button class="game-btn block-btn">${block}</button>
+                `).join('')}
+            </div>
+            <div style="display:flex; gap:1rem; justify-content:center; margin-top:1rem;">
+                <button class="game-btn" style="border-color:var(--error)" onclick="resetQuery()">Borrar</button>
+                <button class="game-btn" style="border-color:var(--success)" onclick="checkQuery()">Verificar</button>
+            </div>
+            <div id="builder-feedback" class="feedback-msg" style="margin-top:1rem;"></div>
+        `;
+
+        document.querySelectorAll('.block-btn').forEach(btn => {
+            btn.onclick = () => {
+                currentQuery.push(btn.textContent);
+                updateDisplay();
+            };
+        });
+    }
+
+    window.updateDisplay = () => {
+        const display = document.getElementById('query-display');
+        if (display) display.textContent = currentQuery.join(' ');
+    };
+
+    window.resetQuery = () => {
+        currentQuery = [];
+        updateDisplay();
+        const feedback = document.getElementById('builder-feedback');
+        if (feedback) feedback.textContent = '';
+    };
+
+    // Track internal results for the detailed log
+    let challengeResults = [];
+
+    window.checkQuery = () => {
+        const challenge = game.challenges[currentChallengeIndex];
+        const userString = currentQuery.join(' ').trim();
+        const feedback = document.getElementById('builder-feedback');
+
+        let status = 'incorrect';
+        if (userString === challenge.correct) status = 'correct';
+        else if (userString === "" || currentQuery.length === 0) status = 'empty';
+
+        challengeResults.push({
+            type: 'builder-sql',
+            title: challenge.goal,
+            status: status,
+            score: status === 'correct' ? 100 : 0
+        });
+
+        const isCorrect = (status === 'correct');
+
+        if (isCorrect) {
+            internalCorrect++;
+            feedback.textContent = "¡Consulta Correcta!";
+            feedback.className = "feedback-msg correct";
+        } else if (status === 'empty') {
+            feedback.textContent = "Respuesta vacía";
+            feedback.className = "feedback-msg incorrect";
+        } else {
+            feedback.textContent = "Error de sintaxis o lógica";
+            feedback.className = "feedback-msg incorrect";
+        }
+
+        setTimeout(() => {
+            currentChallengeIndex++;
+            if (currentChallengeIndex < game.challenges.length) {
+                showChallenge();
+            } else {
+                if (onComplete) {
+                    onComplete(challengeResults);
+                } else {
+                    handleLevelComplete(challengeResults, game.challenges.length);
+                }
+            }
+        }, 1500);
+    };
+
+    showChallenge();
+}
+
+// 7. Pseudocode Builder (Drag & Drop Version)
+function setupPseudocodeBuilder(game, container, onComplete) {
+    // 1. Define Solution & Palette
+    const solutionKeywords = game.lines.map(line => {
+        const firstWord = line.trim().split(' ')[0];
+        const knownKeywords = ['Inicio', 'Fin', 'Leer', 'Escribir', 'Si', 'Sino', 'FinSi', 'Para', 'FinPara', 'Repetir', 'Hasta', 'Según', 'Caso', 'FinSegún'];
+        return knownKeywords.includes(firstWord) ? firstWord : 'Proceso';
+    });
+
+    const keywords = ['Inicio', 'Fin', 'Leer', 'Escribir', 'Si', 'Sino', 'FinSi', 'Para', 'FinPara', 'Repetir', 'Hasta', 'Proceso', 'Según', 'Caso', 'FinSegún'];
+
+    // 2. Render UI
+    // 2. Render UI (Glassmorphism + 2 Columns)
+    container.innerHTML = `
+        <div class="exercise-header fade-in" style="margin-bottom: 2rem; text-align: center;">
+            <h2 style="color: var(--primary-color); margin-bottom: 0.5rem;">${game.title}</h2>
+            <p style="color: var(--text-secondary); font-size: 1.1rem;">${game.instruction}</p>
+        </div>
+
+        <div class="pseudocode-container">
+            <div class="ps-palette">
+                <h4>Bloques</h4>
+                ${keywords.map(k => `<div class="ps-keyword" draggable="true" data-keyword="${k}">${k}</div>`).join('')}
+            </div>
+            <div id="ps-editor" class="ps-editor">
+                <div style="color:#64748b; font-style:italic; text-align:center; margin-top:50px; pointer-events:none;" id="ps-placeholder">
+                    Arrastra los bloques aquí...
+                </div>
+            </div>
+        </div>
+
+        <div class="top-right-controls">
+            <div id="ps-feedback" class="feedback-toast" style="display:none;"></div>
+            <button id="btn-check-ps" class="btn-next">Siguiente ➡</button>
+        </div>
+    `;
+
+    // 3. Logic
+    const editor = document.getElementById('ps-editor');
+    const paletteItems = container.querySelectorAll('.ps-keyword');
+    let draggedKeyword = null;
+
+    // Drag Source
+    paletteItems.forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+            draggedKeyword = item.getAttribute('data-keyword');
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.setData('text/plain', draggedKeyword);
+        });
+
+        // Click fallback
+        item.addEventListener('click', () => addPsLine(item.getAttribute('data-keyword')));
+    });
+
+    // Drop Target
+    editor.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        editor.style.background = 'rgba(30, 41, 59, 1)';
+    });
+    editor.addEventListener('dragleave', () => editor.style.background = '');
+    editor.addEventListener('drop', (e) => {
+        e.preventDefault();
+        editor.style.background = '';
+        const dataKey = draggedKeyword || e.dataTransfer.getData('text/plain');
+        if (dataKey) addPsLine(dataKey);
+    });
+
+    // Helper: Add Line
+    function addPsLine(keyword) {
+        if (document.getElementById('ps-placeholder')) document.getElementById('ps-placeholder').remove();
+
+        const lineDiv = document.createElement('div');
+        lineDiv.className = 'ps-line';
+        lineDiv.setAttribute('data-keyword', keyword);
+
+        // Context-aware placeholder
+        let placeholder = "...";
+        if (keyword === 'Inicio') placeholder = "Nombre del algoritmo";
+        else if (keyword === 'Leer') placeholder = "variable";
+        else if (keyword === 'Escribir') placeholder = "\"Mensaje\"";
+        else if (keyword === 'Si') placeholder = "condición Entonces";
+
+        lineDiv.innerHTML = `
+            <span class="ps-line-keyword">${keyword}</span>
+            <input type="text" class="ps-line-input" placeholder='${placeholder}'>
+            <span class="ps-line-remove" title="Borrar línea" onclick="this.parentElement.remove()">×</span>
+        `;
+
+        editor.appendChild(lineDiv);
+        const input = lineDiv.querySelector('input');
+        if (input) input.focus();
+        editor.scrollTop = editor.scrollHeight;
+    }
+
+    // 4. Check & Advance Logic
+    // 4. Check & Advance Logic
+    document.getElementById('btn-check-ps').onclick = () => {
+        const feedback = document.getElementById('ps-feedback');
+        if (!feedback) return;
+
+        const btn = document.getElementById('btn-check-ps');
+        if (btn) btn.disabled = true;
+
+        const currentLines = Array.from(editor.querySelectorAll('.ps-line'));
+
+        if (currentLines.length === 0) {
+            feedback.innerHTML = `<span>⚠️</span> Respuesta vacía`;
+            feedback.className = "feedback-toast incorrect";
+            feedback.style.display = 'block';
+            // Advance anyway with 'empty' status
+            setTimeout(() => {
+                feedback.style.display = 'none';
+                if (onComplete) onComplete('empty');
+            }, 1500);
+            return;
+        }
+
+        const currentKeywords = currentLines.map(div => div.getAttribute('data-keyword'));
+
+        let isCorrect = true;
+        if (currentKeywords.length !== solutionKeywords.length) isCorrect = false;
+        else {
+            for (let i = 0; i < solutionKeywords.length; i++) {
+                if (currentKeywords[i] !== solutionKeywords[i]) {
+                    isCorrect = false;
+                    break;
+                }
+            }
+        }
+
+        // Visual Feedback
+        feedback.style.display = 'block';
+        if (isCorrect) {
+            feedback.innerHTML = `<span>✔</span> ¡Correcto!`;
+            feedback.className = "feedback-toast correct";
+        } else {
+            feedback.innerHTML = `<span>✖</span> Incorrecto`;
+            feedback.className = "feedback-toast incorrect";
+        }
+
+        // ALWAYS ADVANCE with specific status
+        setTimeout(() => {
+            feedback.style.display = 'none';
+            if (onComplete) onComplete(isCorrect ? 'correct' : 'incorrect');
+        }, 2000);
+    };
+}
+
+// 8. Quiz Item Logic (Single Question)
+function setupQuizItem(exercise, container, onComplete) {
+    let hasAnswered = false;
+    container.innerHTML = `
+        <div class="game-question">
+            <h3>${exercise.question}</h3>
+        </div>
+        <div class="game-options">
+            ${exercise.options.map((opt, idx) => `
+                <button class="game-btn option-btn" data-index="${idx}">${opt}</button>
+            `).join('')}
+        </div>
+    `;
+
+    const btns = container.querySelectorAll('.option-btn');
+
+    btns.forEach(btn => {
+        btn.onclick = () => {
+            if (hasAnswered) return;
+            hasAnswered = true;
+            const selected = parseInt(btn.getAttribute('data-index'));
+            btns.forEach(b => b.disabled = true);
+
+            const isCorrect = (selected === exercise.correct);
+
+            // Visual feedback
+            if (isCorrect) {
+                btn.style.backgroundColor = 'var(--success)';
+            } else {
+                btn.style.backgroundColor = 'var(--error)';
+                btns[exercise.correct].style.backgroundColor = 'var(--success)';
+            }
+
+            if (onComplete) onComplete(isCorrect ? 'correct' : 'incorrect');
+        };
+    });
 }
