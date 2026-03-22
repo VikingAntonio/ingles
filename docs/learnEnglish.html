@@ -354,12 +354,12 @@
         async function handleFile(file) {
             console.log("Handling file:", file.name, file.type);
 
-            // Upload to Cloudinary immediately
+            // Upload to storage immediately
             try {
-                originalFileUrl = await uploadToCloudinary(file);
-                console.log("Uploaded original to Cloudinary:", originalFileUrl);
+                originalFileUrl = await uploadToStorage(file);
+                console.log("Uploaded original:", originalFileUrl);
             } catch (err) {
-                alert("Error subiendo archivo a Cloudinary");
+                alert("Error subiendo archivo");
                 return;
             }
 
@@ -422,8 +422,8 @@
             `;
         }
 
-        // --- Cloudinary Upload ---
-        async function uploadToCloudinary(fileOrBlob) {
+        // --- Storage Upload ---
+        async function uploadToStorage(fileOrBlob) {
             const formData = new FormData();
             formData.append("file", fileOrBlob);
             formData.append("upload_preset", CLOUDINARY_PRESET);
@@ -433,7 +433,7 @@
                 body: formData
             });
 
-            if (!res.ok) throw new Error("Cloudinary upload failed");
+            if (!res.ok) throw new Error("Upload failed");
             const data = await res.json();
             return data.secure_url;
         }
@@ -560,8 +560,8 @@
             btnSave.textContent = "Guardando...";
 
             try {
-                // 1. Upload user audio to Cloudinary
-                const userAudioUrl = await uploadToCloudinary(userAudioBlob);
+                // 1. Upload user audio to storage
+                const userAudioUrl = await uploadToStorage(userAudioBlob);
 
                 // 2. Save to Supabase
                 // Calculate total progress across all paragraphs

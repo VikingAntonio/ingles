@@ -269,6 +269,7 @@ function editLevelBasics() {
     const level = findLevelById(selectedLevelId);
     document.getElementById('lesson-title').value = level.lesson_title;
     document.getElementById('lesson-content').value = level.lesson_content;
+    document.getElementById('level-schema-url').value = level.schema_url || "";
     document.getElementById('modal-lesson').classList.add('active');
 }
 
@@ -276,8 +277,13 @@ async function saveLesson() {
     console.log("💾 saveLesson called");
     const lt = document.getElementById('lesson-title').value;
     const lc = document.getElementById('lesson-content').value;
+    const lsu = document.getElementById('level-schema-url').value;
 
-    const { error } = await _supabase.from('levels').update({ lesson_title: lt, lesson_content: lc }).eq('id', selectedLevelId);
+    const { error } = await _supabase.from('levels').update({
+        lesson_title: lt,
+        lesson_content: lc,
+        schema_url: lsu
+    }).eq('id', selectedLevelId);
     if (error) alert(error.message);
     else {
         closeModal('modal-lesson');
@@ -303,10 +309,22 @@ function renderQuestions() {
     questions.forEach((q, index) => {
         const div = document.createElement('div');
         div.className = 'question-card';
+
+        let extraInfo = "";
+        if (q.type === 'quiz-item' || q.type === 'listening-practice') {
+            const correctText = q.options && q.options[q.correct_answer] ? q.options[q.correct_answer] : "N/A";
+            extraInfo = `<div style="font-size:0.8rem; color:#aaa; margin-top:5px;">Respuesta: <b style="color:var(--success)">${correctText}</b></div>`;
+        }
+
+        if (q.audio_url) {
+            extraInfo += `<div style="font-size:0.7rem; color:#64748b; margin-top:3px; word-break:break-all;"><i class="fas fa-music"></i> ${q.audio_url}</div>`;
+        }
+
         div.innerHTML = `
             <div class="q-info">
-                <span>Tipo: ${q.type}</span>
+                <span>#${index + 1} - Tipo: ${q.type}</span>
                 <h4>${q.title || q.question_text || `Pregunta ${index + 1}`}</h4>
+                ${extraInfo}
             </div>
             <div class="q-actions">
                 <button class="icon-btn" title="Subir" onclick="reorderQuestion('${q.id}', -1, event)" ${index === 0 ? 'style="opacity:0.2; pointer-events:none"' : ''}><i class="fas fa-arrow-up"></i></button>
@@ -413,17 +431,28 @@ function renderQuestionFields(q = null) {
     };
 
     if (type === 'quiz-item') {
-        const options = q ? q.options.join('\n') : "Opción A\nOpción B\nOpción C\nOpción D";
+        const optionsArr = q ? q.options : ["Opción A", "Opción B", "Opción C", "Opción D"];
+        const options = optionsArr.join('\n');
         const correct = q ? q.correct_answer : 0;
         addField('Opciones (una por línea)', 'q-options', 'textarea', options);
         addField('Índice Correcto (0, 1, 2...)', 'q-correct', 'number', correct);
+
+        // Show actual correct answer text
+        const correctText = optionsArr[correct] || "N/A";
+        const feedbackDiv = document.createElement('div');
+        feedbackDiv.style.marginTop = "-10px";
+        feedbackDiv.style.marginBottom = "15px";
+        feedbackDiv.style.fontSize = "0.9rem";
+        feedbackDiv.innerHTML = `Respuesta Actual: <b style="color:var(--success)">${correctText}</b>`;
+        container.appendChild(feedbackDiv);
     }
     else if (type === 'speech-practice') {
         const text = q ? q.question_text : "Menutech is a leading software company.";
         addField('Texto para pronunciar', 'q-speech-text', 'textarea', text);
     }
     else if (type === 'listening-practice') {
-        const options = q ? q.options.join('\n') : "Opción A\nOpción B\nOpción C\nOpción D";
+        const optionsArr = q ? q.options : ["Opción A", "Opción B", "Opción C", "Opción D"];
+        const options = optionsArr.join('\n');
         const correct = q ? q.correct_answer : 0;
         const audioUrl = q ? q.audio_url || '' : '';
 
@@ -431,15 +460,22 @@ function renderQuestionFields(q = null) {
         addField('Opciones (una por línea)', 'q-options', 'textarea', options);
         addField('Índice Correcto (0, 1, 2...)', 'q-correct', 'number', correct);
 
+        const correctText = optionsArr[correct] || "N/A";
+        const feedbackDiv = document.createElement('div');
+        feedbackDiv.style.marginTop = "-10px";
+        feedbackDiv.style.marginBottom = "15px";
+        feedbackDiv.style.fontSize = "0.9rem";
+        feedbackDiv.innerHTML = `Respuesta Actual: <b style="color:var(--success)">${correctText}</b>`;
+        container.appendChild(feedbackDiv);
+
         const div = document.createElement('div');
         div.className = 'form-group';
         div.innerHTML = `
-            <label>Audio URL (Cloudinary)</label>
+            <label>Ruta del Audio</label>
             <div style="display:flex; gap:10px;">
                 <input type="text" id="q-audio-url" value="${audioUrl}" style="flex:1">
-                <button class="modal-btn small-btn" onclick="uploadAudioToCloudinary()" style="white-space:nowrap;">Subir Audio</button>
+                <button class="modal-btn small-btn" onclick="uploadAudioToStorage('q-audio-url')" style="white-space:nowrap;">Subir Audio</button>
             </div>
-            <input type="file" id="audio-file-input" style="display:none" accept="audio/*" onchange="handleAudioFileSelection(this)">
         `;
         container.appendChild(div);
     }
@@ -466,18 +502,37 @@ function renderQuestionFields(q = null) {
     }
 }
 
-// --- CLOUDINARY AUDIO UPLOAD ---
-async function uploadAudioToCloudinary() {
-    document.getElementById('audio-file-input').click();
+// --- ASSET STORAGE UPLOADS ---
+async function uploadAudioToStorage(targetId = 'q-audio-url') {
+    const input = document.getElementById('audio-file-input');
+    input.onchange = (e) => handleFileSelection(e.target, 'audio', targetId);
+    input.click();
 }
 
-async function handleAudioFileSelection(input) {
+async function uploadImageToStorage(targetId) {
+    const input = document.getElementById('image-file-input');
+    input.onchange = (e) => handleFileSelection(e.target, 'image', targetId);
+    input.click();
+}
+
+async function handleFileSelection(input, type, targetId) {
     const file = input.files[0];
     if (!file) return;
 
-    const btn = document.querySelector('button[onclick="uploadAudioToCloudinary()"]');
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
-    btn.disabled = true;
+    // Find the button that triggered this
+    let btn;
+    if (type === 'audio') {
+        btn = document.querySelector(`button[onclick*="uploadAudioToStorage('${targetId}')"]`) ||
+              document.querySelector('button[onclick*="uploadAudioToStorage"]');
+    } else {
+        btn = document.querySelector(`button[onclick*="uploadImageToStorage('${targetId}')"]`);
+    }
+
+    const originalHTML = btn ? btn.innerHTML : 'Subir';
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
+        btn.disabled = true;
+    }
 
     const formData = new FormData();
     formData.append('file', file);
@@ -490,17 +545,19 @@ async function handleAudioFileSelection(input) {
         });
         const data = await response.json();
         if (data.secure_url) {
-            document.getElementById('q-audio-url').value = data.secure_url;
-            alert('¡Audio subido con éxito!');
+            document.getElementById(targetId).value = data.secure_url;
+            alert('¡Archivo subido con éxito!');
         } else {
             throw new Error(data.error?.message || 'Error desconocido');
         }
     } catch (err) {
-        console.error("Cloudinary Error:", err);
-        alert("Error al subir audio: " + err.message);
+        console.error("Upload Error:", err);
+        alert("Error al subir archivo: " + err.message);
     } finally {
-        btn.innerHTML = 'Subir Audio';
-        btn.disabled = false;
+        if (btn) {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }
     }
 }
 
@@ -566,16 +623,16 @@ async function saveQuestion() {
 
     if (type === 'quiz-item') {
         payload.question_text = title;
-        payload.options = document.getElementById('q-options').value.split('\n').filter(l => l.trim());
-        payload.correct_answer = document.getElementById('q-correct').value;
+        payload.options = document.getElementById('q-options').value.split('\n').map(l => l.trim()).filter(l => l);
+        payload.correct_answer = parseInt(document.getElementById('q-correct').value) || 0;
     }
     else if (type === 'speech-practice') {
         payload.question_text = document.getElementById('q-speech-text').value;
     }
     else if (type === 'listening-practice') {
         payload.question_text = document.getElementById('q-listening-question').value;
-        payload.options = document.getElementById('q-options').value.split('\n').filter(l => l.trim());
-        payload.correct_answer = document.getElementById('q-correct').value;
+        payload.options = document.getElementById('q-options').value.split('\n').map(l => l.trim()).filter(l => l);
+        payload.correct_answer = parseInt(document.getElementById('q-correct').value) || 0;
         payload.audio_url = document.getElementById('q-audio-url').value;
     }
     else if (type === 'builder') {
