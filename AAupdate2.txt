@@ -1,0 +1,4 @@
+-- Add schema_url to levels table to store database diagram image URLs
+ALTER TABLE levels ADD COLUMN IF NOT EXISTS schema_url TEXT;
+
+COMMENT ON COLUMN levels.schema_url IS 'URL de la imagen del esquema de base de datos para este nivel (Cloudinary)';

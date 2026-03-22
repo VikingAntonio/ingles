@@ -295,16 +295,6 @@
                 </ul>
             </div>
 
-            <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
-                <p style="font-size: 0.7rem; color: #64748b; margin-bottom: 0.5rem;">Backup / Portabilidad:</p>
-                <button onclick="exportJSON()" class="modal-btn secondary" style="width: 100%; font-size: 0.8rem; margin-bottom: 0.5rem;">
-                    <i class="fas fa-download"></i> Exportar JSON
-                </button>
-                <button onclick="document.getElementById('import-file').click()" class="modal-btn secondary" style="width: 100%; font-size: 0.8rem;">
-                    <i class="fas fa-upload"></i> Importar JSON
-                </button>
-                <input type="file" id="import-file" style="display:none" accept=".json" onchange="importJSON(this)">
-            </div>
         </aside>
 
         <!-- Main Content -->
@@ -366,7 +356,7 @@
 
     <div id="modal-lesson" class="overlay">
         <div class="modal-box">
-            <h2>Configurar Lección</h2>
+            <h2>Configurar Lección y Esquema</h2>
             <div class="form-group">
                 <label>Título de la Lección</label>
                 <input type="text" id="lesson-title">
@@ -375,9 +365,16 @@
                 <label>Contenido HTML (Explicación)</label>
                 <textarea id="lesson-content"></textarea>
             </div>
+            <div class="form-group">
+                <label>Imagen del Esquema de Base de Datos</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="level-schema-url" placeholder="URL de la imagen del esquema (o externa)" style="flex:1">
+                    <button class="modal-btn small-btn" onclick="uploadImageToStorage('level-schema-url')" style="white-space:nowrap;">Subir Imagen</button>
+                </div>
+            </div>
             <div class="btn-group" style="justify-content: flex-end;">
                 <button class="modal-btn secondary" onclick="closeModal('modal-lesson')">Cancelar</button>
-                <button class="modal-btn" onclick="saveLesson()">Guardar Lección</button>
+                <button class="modal-btn" onclick="saveLesson()">Guardar Cambios</button>
             </div>
         </div>
     </div>
@@ -419,6 +416,10 @@
             </div>
         </div>
     </div>
+
+    <!-- Hidden inputs for file uploads -->
+    <input type="file" id="audio-file-input" style="display:none" accept="audio/*">
+    <input type="file" id="image-file-input" style="display:none" accept="image/*">
 
     <!-- Scripts -->
     <script src="admin.js"></script>
