@@ -48,8 +48,21 @@ async function loadDataFromSupabase() {
         }
 
         renderSubjects();
-        if (selectedSubjectId) renderLevels();
-        if (selectedLevelId) renderLevelDetails();
+        if (selectedSubjectId && dbData[selectedSubjectId]) {
+            renderLevels();
+            if (selectedLevelId && findLevelById(selectedLevelId)) {
+                renderLevelDetails();
+            } else {
+                selectedLevelId = null;
+                levelEditor.style.display = 'none';
+            }
+        } else {
+            selectedSubjectId = null;
+            selectedLevelId = null;
+            levelsSection.style.display = 'none';
+            levelEditor.style.display = 'none';
+            welcomeScreen.style.display = 'block';
+        }
 
         console.log("✅ Data synced:", dbData);
     } catch (err) {
@@ -68,7 +81,7 @@ function renderSubjects() {
         li.innerHTML = `
             <span>${s.title}</span>
             <div class="q-actions">
-                <button class="icon-btn small" onclick="renameSubject('${id}', event)"><i class="fas fa-edit"></i></button>
+                <button class="icon-btn small" onclick="openSubjectModal('${id}', event)"><i class="fas fa-cog"></i></button>
                 <button class="icon-btn small delete" onclick="deleteSubject('${id}', event)"><i class="fas fa-trash"></i></button>
             </div>
         `;
@@ -87,27 +100,54 @@ function selectSubject(id) {
     renderLevels();
 }
 
-async function addNewSubject() {
-    const title = prompt("Nombre de la nueva materia:");
-    if (!title) return;
-    const slug = title.toLowerCase().replace(/[^a-z0-9]/g, '_');
+function openSubjectModal(id = null, e = null) {
+    if (e) e.stopPropagation();
+    const modal = document.getElementById('modal-subject');
+    const titleInput = document.getElementById('subject-title-input');
+    const descInput = document.getElementById('subject-description-input');
+    const modalTitle = document.getElementById('subject-modal-title');
 
-    const { data, error } = await _supabase.from('subjects').insert([{ title, slug, description: "Nueva materia." }]).select();
-    if (error) {
-        alert("Error: " + error.message);
-        return;
+    if (id) {
+        const s = dbData[id];
+        titleInput.value = s.title;
+        descInput.value = s.description || "";
+        modalTitle.textContent = "Editar Materia";
+        modal.dataset.id = id;
+    } else {
+        titleInput.value = "";
+        descInput.value = "";
+        modalTitle.textContent = "Nueva Materia";
+        delete modal.dataset.id;
     }
-    await loadDataFromSupabase();
+    modal.classList.add('active');
 }
 
-async function renameSubject(id, e) {
-    e.stopPropagation();
-    const newTitle = prompt("Nuevo nombre para la materia:", dbData[id].title);
-    if (newTitle) {
-        const { error } = await _supabase.from('subjects').update({ title: newTitle }).eq('id', id);
+function addNewSubject() {
+    openSubjectModal();
+}
+
+async function saveSubject() {
+    console.log("💾 saveSubject called");
+    const modal = document.getElementById('modal-subject');
+    const id = modal.dataset.id;
+    const title = document.getElementById('subject-title-input').value;
+    const description = document.getElementById('subject-description-input').value;
+
+    if (!title) return alert("El título es obligatorio");
+
+    if (id) {
+        // Update
+        const { error } = await _supabase.from('subjects').update({ title, description }).eq('id', id);
         if (error) alert(error.message);
-        else await loadDataFromSupabase();
+    } else {
+        // Insert
+        const slug = title.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        const { error } = await _supabase.from('subjects').insert([{ title, slug, description }]);
+        if (error) alert(error.message);
     }
+
+    closeModal('modal-subject');
+    await loadDataFromSupabase();
 }
 
 async function deleteSubject(id, e) {
@@ -118,7 +158,9 @@ async function deleteSubject(id, e) {
         else {
             if (selectedSubjectId === id) {
                 selectedSubjectId = null;
+                selectedLevelId = null;
                 levelsSection.style.display = 'none';
+                levelEditor.style.display = 'none';
             }
             await loadDataFromSupabase();
         }
@@ -130,18 +172,51 @@ function renderLevels() {
     levelList.innerHTML = '';
     if (!selectedSubjectId) return;
 
-    dbData[selectedSubjectId].levels.forEach((level) => {
+    const levels = dbData[selectedSubjectId].levels;
+
+    levels.forEach((level, index) => {
         const li = document.createElement('li');
         li.className = `sidebar-item ${selectedLevelId === level.id ? 'active' : ''}`;
         li.innerHTML = `
             <span>Nivel ${level.level_number}: ${level.title}</span>
             <div class="q-actions">
+                <button class="icon-btn small" onclick="reorderLevel('${level.id}', -1, event)" ${index === 0 ? 'style="opacity:0.2; pointer-events:none"' : ''}><i class="fas fa-arrow-up"></i></button>
+                <button class="icon-btn small" onclick="reorderLevel('${level.id}', 1, event)" ${index === levels.length - 1 ? 'style="opacity:0.2; pointer-events:none"' : ''}><i class="fas fa-arrow-down"></i></button>
                 <button class="icon-btn small delete" onclick="deleteLevel('${level.id}', event)"><i class="fas fa-trash"></i></button>
             </div>
         `;
         li.onclick = () => selectLevel(level.id);
         levelList.appendChild(li);
     });
+}
+
+async function reorderLevel(id, direction, e) {
+    if (e) e.stopPropagation();
+    const levels = dbData[selectedSubjectId].levels;
+    const idx = levels.findIndex(l => l.id === id);
+    if (idx === -1) return;
+
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= levels.length) return;
+
+    const current = levels[idx];
+    const target = levels[targetIdx];
+
+    // Swap level_number
+    const tempNum = current.level_number;
+
+    // We need to use a temporary value to avoid unique constraint if we had one (we do have a UNIQUE(subject_id, level_number))
+    // So let's use a very large number as temp.
+    const { error: err1 } = await _supabase.from('levels').update({ level_number: -999 }).eq('id', current.id);
+    if (err1) return alert(err1.message);
+
+    const { error: err2 } = await _supabase.from('levels').update({ level_number: current.level_number }).eq('id', target.id);
+    if (err2) return alert(err2.message);
+
+    const { error: err3 } = await _supabase.from('levels').update({ level_number: target.level_number }).eq('id', current.id);
+    if (err3) return alert(err3.message);
+
+    await loadDataFromSupabase();
 }
 
 function selectLevel(id) {
@@ -198,6 +273,7 @@ function editLevelBasics() {
 }
 
 async function saveLesson() {
+    console.log("💾 saveLesson called");
     const lt = document.getElementById('lesson-title').value;
     const lc = document.getElementById('lesson-content').value;
 
@@ -233,6 +309,8 @@ function renderQuestions() {
                 <h4>${q.title || q.question_text || `Pregunta ${index + 1}`}</h4>
             </div>
             <div class="q-actions">
+                <button class="icon-btn" title="Subir" onclick="reorderQuestion('${q.id}', -1, event)" ${index === 0 ? 'style="opacity:0.2; pointer-events:none"' : ''}><i class="fas fa-arrow-up"></i></button>
+                <button class="icon-btn" title="Bajar" onclick="reorderQuestion('${q.id}', 1, event)" ${index === questions.length - 1 ? 'style="opacity:0.2; pointer-events:none"' : ''}><i class="fas fa-arrow-down"></i></button>
                 <button class="icon-btn" title="Cambiar de Nivel" onclick="moveQuestionToLevel('${q.id}', event)"><i class="fas fa-exchange-alt"></i></button>
                 <button class="icon-btn" title="Editar" onclick="editQuestion('${q.id}', event)"><i class="fas fa-edit"></i></button>
                 <button class="icon-btn delete" title="Eliminar" onclick="deleteQuestion('${q.id}', event)"><i class="fas fa-trash"></i></button>
@@ -241,6 +319,29 @@ function renderQuestions() {
         div.onclick = () => editQuestion(q.id);
         questionsList.appendChild(div);
     });
+}
+
+async function reorderQuestion(id, direction, e) {
+    if (e) e.stopPropagation();
+    const level = findLevelById(selectedLevelId);
+    const questions = level.questions;
+    const idx = questions.findIndex(q => q.id === id);
+    if (idx === -1) return;
+
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= questions.length) return;
+
+    const current = questions[idx];
+    const target = questions[targetIdx];
+
+    // Swap order_index
+    const { error: err1 } = await _supabase.from('questions').update({ order_index: target.order_index }).eq('id', current.id);
+    if (err1) return alert(err1.message);
+
+    const { error: err2 } = await _supabase.from('questions').update({ order_index: current.order_index }).eq('id', target.id);
+    if (err2) return alert(err2.message);
+
+    await loadDataFromSupabase();
 }
 
 function addNewQuestion() {
@@ -380,10 +481,10 @@ async function handleAudioFileSelection(input) {
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', 'de3n9pg8x');
+    formData.append('upload_preset', 'Tragalero');
 
     try {
-        const response = await fetch('https://api.cloudinary.com/v1_1/vikingdevBdd/upload', {
+        const response = await fetch('https://api.cloudinary.com/v1_1/dbbjxhvz5/upload', {
             method: 'POST',
             body: formData
         });
@@ -450,6 +551,7 @@ async function importJSON(input) {
 }
 
 async function saveQuestion() {
+    console.log("💾 saveQuestion called");
     const type = document.getElementById('q-type').value;
     const title = document.getElementById('q-title').value;
     const instruction = document.getElementById('q-instruction').value;
@@ -506,6 +608,11 @@ async function saveQuestion() {
         const { error } = await _supabase.from('questions').update(payload).eq('id', editingQuestionId);
         if (error) alert(error.message);
     } else {
+        // Get max order_index for this level
+        const level = findLevelById(selectedLevelId);
+        const maxIdx = level.questions.length > 0 ? Math.max(...level.questions.map(q => q.order_index || 0)) : -1;
+        payload.order_index = maxIdx + 1;
+
         const { error } = await _supabase.from('questions').insert([payload]);
         if (error) alert(error.message);
     }
