@@ -141,18 +141,6 @@ function initHomeCards() {
 // Completed Levels
 let completedLevels = new Set();
 
-// DOM Elements
-const homeView = document.getElementById('home-view');
-const levelView = document.getElementById('level-view');
-const appView = document.getElementById('app-view');
-const contentArea = document.getElementById('content-area');
-const subjectTitle = document.getElementById('current-subject-title');
-const levelSubjectTitle = document.getElementById('level-subject-title');
-const backBtn = document.getElementById('btn-back');
-const homeLevelBtn = document.getElementById('btn-home-level');
-const navBtns = document.querySelectorAll('.nav-btn');
-const cards = document.querySelectorAll('.card');
-
 // Modal Elements
 const modal = document.getElementById('level-modal');
 const modalScore = document.getElementById('modal-score-display');
