@@ -380,10 +380,10 @@ async function handleAudioFileSelection(input) {
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', 'Tragalero');
+    formData.append('upload_preset', 'de3n9pg8x');
 
     try {
-        const response = await fetch('https://api.cloudinary.com/v1_1/dbbjxhvz5/upload', {
+        const response = await fetch('https://api.cloudinary.com/v1_1/vikingdevBdd/upload', {
             method: 'POST',
             body: formData
         });
