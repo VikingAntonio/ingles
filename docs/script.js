@@ -136,22 +136,16 @@ if (navBtns) {
 function openSubject(subject) {
     console.log('openSubject called:', subject);
     if (!courseData[subject]) {
-        console.error('Subject data not found:', subject);
+        console.warn('Subject data not synced yet, retrying in 500ms...');
+        setTimeout(() => openSubject(subject), 500);
         return;
     }
     currentState.subject = subject;
     levelSubjectTitle.textContent = courseData[subject].title;
     renderLevelSelection(subject);
 
-    // Hide others
-    homeView.classList.remove('active');
-    homeView.classList.add('hidden');
-    appView.classList.remove('active');
-    appView.classList.add('hidden');
-
-    // Show levels
-    levelView.classList.remove('hidden');
-    void levelView.offsetWidth; // Force reflow
+    // Smooth switch using .view.active
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     levelView.classList.add('active');
 }
 
@@ -275,27 +269,9 @@ function startExam(subject, levelIndex) {
     currentState.levelIndex = levelIndex;
     currentState.mode = 'game'; // Force Game Mode
 
-    // 1. Switch Views (Navigation)
-    const levelView = document.getElementById('level-view');
-    const appView = document.getElementById('app-view');
-    const homeView = document.getElementById('home-view');
-
-    // Hide others
-    if (homeView) {
-        homeView.classList.remove('active');
-        homeView.classList.add('hidden');
-    }
-    if (levelView) {
-        levelView.classList.remove('active');
-        levelView.classList.add('hidden');
-    }
-
-    // Show App View
-    if (appView) {
-        appView.classList.remove('hidden');
-        void appView.offsetWidth; // Force reflow
-        appView.classList.add('active');
-    }
+    // 1. Switch Views (Navigation) - Use .view.active
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    if (appView) appView.classList.add('active');
 
     // 2. Update Header
     const levelData = courseData[subject].levels[levelIndex];
@@ -310,23 +286,8 @@ function startExam(subject, levelIndex) {
 
 function goHome() {
     console.log('goHome called');
-    const levelView = document.getElementById('level-view');
-    const appView = document.getElementById('app-view');
-    const homeView = document.getElementById('home-view');
-
-    if (levelView) {
-        levelView.classList.remove('active');
-        levelView.classList.add('hidden');
-    }
-    if (appView) {
-        appView.classList.remove('active');
-        appView.classList.add('hidden');
-    }
-    if (homeView) {
-        homeView.classList.remove('hidden');
-        void homeView.offsetWidth; // Force reflow
-        homeView.classList.add('active');
-    }
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    if (homeView) homeView.classList.add('active');
     currentState.subject = null;
 }
 
@@ -1436,60 +1397,34 @@ function setupFlowchartCanvas(exercise, container, onSuccess) {
     };
 }
 
-// 3. Quiz Diagram Logic
+// 3. Quiz Diagram Logic (Dynamic)
 function setupQuizDiagram(exercise, container, onSuccess) {
     let hasAnswered = false;
-    const diagramHTML = `
-        <div class="static-diagram">
-            <div class="node-oval">E</div>
-            <div class="arrow">⬇</div>
-            <div class="node-diamond"><span>>2</span></div>
-            <div class="path-split">
-                <div class="path-left">
-                    <div class="label-yes">Sí</div>
-                    <div class="arrow-horiz">⬅</div>
-                    <div class="arrow-vert">⬇ (+2)</div>
-                    <div class="node-diamond">° 3</div>
-                    <div class="path-split-inner">
-                        <div class="path-inner-left">
-                           <div class="label-no">No</div>
-                           <div class="arrow-horiz">⬅</div>
-                           <div class="arrow-vert">⬇ (-1)</div>
-                           <div class="node-diamond">° 2</div>
-                           <div class="path-return">
-                                <div class="label-yes">Sí</div>
-                                <div class="arrow-ret">⤴ (-1)</div>
-                           </div>
-                           <div class="path-inner-right">
-                                <div class="label-no">No</div>
-                                <div class="arrow-right">➡</div>
-                           </div>
-                        </div>
-                        <div class="path-inner-right">
-                            <div class="label-yes">Sí</div>
-                            <div class="arrow-right">➡</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="path-right">
-                    <div class="label-no">No</div>
-                    <div class="arrow-vert">⬇ (+1)</div>
-                    <div class="line-vert"></div>
-                </div>
+
+    // Use diagram_url if available, else fallback to hardcoded SVG logic
+    let diagramContent = "";
+    if (exercise.diagram_url) {
+        diagramContent = `<img src="${exercise.diagram_url}" style="max-width:100%; border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">`;
+    } else {
+        // Legacy/Fallback SVG-like diagram
+        diagramContent = `
+            <div class="static-diagram">
+                <div class="node-oval">E</div>
+                <div class="arrow">⬇</div>
+                <div class="node-diamond"><span>>2</span></div>
+                <div class="merge-point"></div>
+                <div class="arrow">⬇ (+2)</div>
+                <div class="node-oval">S</div>
             </div>
-            <div class="merge-point"></div>
-            <div class="arrow">⬇ (+2)</div>
-            <div class="arrow">⬇ (+3)</div>
-            <div class="node-oval">S</div>
-        </div>
-    `;
+        `;
+    }
 
     container.innerHTML = `
         <div class="quiz-diagram-container" style="display:flex; justify-content:center; margin-bottom: 2rem;">
-            ${diagramHTML}
+            ${diagramContent}
         </div>
         <div class="game-question">
-            <h3>${exercise.question}</h3>
+            <h3>${exercise.question_text || exercise.question}</h3>
         </div>
         <div class="game-options">
             ${exercise.options.map((opt, idx) => `
