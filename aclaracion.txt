@@ -1,0 +1,7 @@
+Este error ("Cannot read properties of undefined (reading '0')") ocurrió debido a una discrepancia entre la estructura de datos que esperaba el motor de juegos (legacy) y la que entrega Supabase actualmente.
+
+Anteriormente, los ejercicios de tipo 'builder' (SQL) estaban diseñados para manejar múltiples "desafíos" dentro de un solo ejercicio, por lo que buscaban una propiedad llamada `challenges` (un arreglo). Sin embargo, al migrar las preguntas a Supabase, cada registro de la tabla `questions` se trata como un ejercicio individual, por lo que la propiedad `challenges` no existía, causando que el código fallara al intentar leer el primer elemento (`[0]`).
+
+Para solucionarlo, actualicé la función `setupBuilder` en `docs/script.js`. Ahora, si el sistema detecta que faltan los datos en formato de arreglo, envuelve automáticamente la información de la pregunta de Supabase en el formato que el juego espera. Esto garantiza que tanto las preguntas viejas como las nuevas funcionen correctamente sin errores.
+
+También añadí el soporte para "Diagramas Estáticos" en el Panel de Administración para que puedas editar esas preguntas fácilmente en el futuro.
