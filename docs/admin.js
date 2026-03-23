@@ -311,13 +311,16 @@ function renderQuestions() {
         div.className = 'question-card';
 
         let extraInfo = "";
-        if (q.type === 'quiz-item' || q.type === 'listening-practice') {
-            const correctText = q.options && q.options[q.correct_answer] ? q.options[q.correct_answer] : "N/A";
+        if (q.type === 'quiz-item' || q.type === 'listening-practice' || q.type === 'quiz-diagram') {
+            const correctText = q.options && q.options[q.correct_answer] ? q.options[q.correct_answer] : (q.correct_answer !== undefined ? q.correct_answer : "N/A");
             extraInfo = `<div style="font-size:0.8rem; color:#aaa; margin-top:5px;">Respuesta: <b style="color:var(--success)">${correctText}</b></div>`;
         }
 
         if (q.audio_url) {
-            extraInfo += `<div style="font-size:0.7rem; color:#64748b; margin-top:3px; word-break:break-all;"><i class="fas fa-music"></i> ${q.audio_url}</div>`;
+            extraInfo += `<div style="font-size:0.7rem; color:#64748b; margin-top:3px; word-break:break-all;"><i class="fas fa-music"></i> Audio: ${q.audio_url}</div>`;
+        }
+        if (q.diagram_url) {
+            extraInfo += `<div style="font-size:0.7rem; color:#64748b; margin-top:3px; word-break:break-all;"><i class="fas fa-image"></i> Diagrama: ${q.diagram_url}</div>`;
         }
 
         div.innerHTML = `
@@ -434,9 +437,21 @@ function renderQuestionFields(q = null) {
         const optionsArr = q ? q.options : ["Opción A", "Opción B", "Opción C", "Opción D"];
         const options = optionsArr.join('\n');
         const correct = q ? q.correct_answer : 0;
+        const diagramUrl = q ? q.diagram_url || '' : '';
 
         if (type === 'quiz-diagram') {
             addField('Pregunta (Ej: ¿Qué valor tiene S si E=5?)', 'q-diagram-question', 'text', q ? q.question_text : "");
+
+            const divImg = document.createElement('div');
+            divImg.className = 'form-group';
+            divImg.innerHTML = `
+                <label>Imagen del Diagrama</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="q-diagram-url" value="${diagramUrl}" style="flex:1">
+                    <button class="modal-btn small-btn" onclick="uploadImageToStorage('q-diagram-url')" style="white-space:nowrap;">Subir Imagen</button>
+                </div>
+            `;
+            container.appendChild(divImg);
         }
 
         addField('Opciones (una por línea)', 'q-options', 'textarea', options);
@@ -567,51 +582,6 @@ async function handleFileSelection(input, type, targetId) {
 }
 
 // --- SAVE QUESTION ---
-function exportJSON() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dbData, null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "menutech_exams_backup.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-}
-
-async function importJSON(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            const data = JSON.parse(e.target.result);
-            if (confirm("¿Estás seguro de importar? Esto podría duplicar materias si ya existen con el mismo nombre.")) {
-                for (const sid in data) {
-                    const s = data[sid];
-                    const { data: newS, error: sErr } = await _supabase.from('subjects').insert([{ title: s.title, slug: s.slug, description: s.description }]).select();
-                    if (sErr) continue;
-
-                    for (const l of s.levels) {
-                        const { data: newL, error: lErr } = await _supabase.from('levels').insert([{
-                            subject_id: newS[0].id, level_number: l.level_number, title: l.title,
-                            lesson_title: l.lesson_title, lesson_content: l.lesson_content, game_title: l.game_title
-                        }]).select();
-                        if (lErr) continue;
-
-                        for (const q of l.questions) {
-                            delete q.id;
-                            q.level_id = newL[0].id;
-                            await _supabase.from('questions').insert([q]);
-                        }
-                    }
-                }
-                await loadDataFromSupabase();
-                alert("Importación completada.");
-            }
-        } catch (err) { alert("Error al importar JSON."); }
-    };
-    reader.readAsText(file);
-}
-
 async function saveQuestion() {
     console.log("💾 saveQuestion called");
     const type = document.getElementById('q-type').value;
@@ -635,6 +605,7 @@ async function saveQuestion() {
         payload.question_text = document.getElementById('q-diagram-question').value;
         payload.options = document.getElementById('q-options').value.split('\n').map(l => l.trim()).filter(l => l);
         payload.correct_answer = parseInt(document.getElementById('q-correct').value) || 0;
+        payload.diagram_url = document.getElementById('q-diagram-url').value;
     }
     else if (type === 'speech-practice') {
         payload.question_text = document.getElementById('q-speech-text').value;
