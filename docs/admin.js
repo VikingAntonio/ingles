@@ -313,7 +313,9 @@ function renderQuestions() {
         let extraInfo = "";
         if (q.type === 'quiz-item' || q.type === 'listening-practice' || q.type === 'quiz-diagram') {
             const correctText = q.options && q.options[q.correct_answer] ? q.options[q.correct_answer] : (q.correct_answer !== undefined ? q.correct_answer : "N/A");
-            extraInfo = `<div style="font-size:0.8rem; color:#aaa; margin-top:5px;">Respuesta: <b style="color:var(--success)">${correctText}</b></div>`;
+            extraInfo = `<div style="font-size:0.8rem; color:#aaa; margin-top:5px;">Respuesta Correcta: <b style="color:var(--success)">${correctText}</b></div>`;
+        } else if (q.type === 'builder') {
+             extraInfo = `<div style="font-size:0.8rem; color:#aaa; margin-top:5px;">Query: <b style="color:var(--secondary-color)">${q.correct_answer}</b></div>`;
         }
 
         if (q.audio_url) {
@@ -433,37 +435,69 @@ function renderQuestionFields(q = null) {
         container.appendChild(div);
     };
 
-    if (type === 'quiz-item' || type === 'quiz-diagram') {
-        const optionsArr = q ? q.options : ["Opción A", "Opción B", "Opción C", "Opción D"];
-        const options = optionsArr.join('\n');
-        const correct = q ? q.correct_answer : 0;
-        const diagramUrl = q ? q.diagram_url || '' : '';
+    if (type === 'quiz-item' || type === 'quiz-diagram' || type === 'listening-practice') {
+        let optionsArr = [];
+        let correct = 0;
 
-        if (type === 'quiz-diagram') {
-            addField('Pregunta (Ej: ¿Qué valor tiene S si E=5?)', 'q-diagram-question', 'text', q ? q.question_text : "");
+        if (type === 'listening-practice') {
+            optionsArr = q ? q.options : ["Opción A", "Opción B", "Opción C", "Opción D"];
+            correct = q ? q.correct_answer : 0;
+            const audioUrl = q ? q.audio_url || '' : '';
 
-            const divImg = document.createElement('div');
-            divImg.className = 'form-group';
-            divImg.innerHTML = `
-                <label>Imagen del Diagrama</label>
+            addField('Pregunta específica', 'q-listening-question', 'text', q ? q.question_text : "What is the speaker talking about?");
+
+            const divAudio = document.createElement('div');
+            divAudio.className = 'form-group';
+            divAudio.innerHTML = `
+                <label>Audio del Ejercicio</label>
                 <div style="display:flex; gap:10px;">
-                    <input type="text" id="q-diagram-url" value="${diagramUrl}" style="flex:1">
-                    <button class="modal-btn small-btn" onclick="uploadImageToStorage('q-diagram-url')" style="white-space:nowrap;">Subir Imagen</button>
+                    <input type="text" id="q-audio-url" value="${audioUrl}" style="flex:1">
+                    <button class="modal-btn small-btn" onclick="uploadAudioToStorage('q-audio-url')" style="white-space:nowrap;">Subir Audio</button>
                 </div>
             `;
-            container.appendChild(divImg);
+            container.appendChild(divAudio);
+        } else {
+            optionsArr = q ? q.options : ["Opción A", "Opción B", "Opción C", "Opción D"];
+            correct = q ? q.correct_answer : 0;
+            const diagramUrl = q ? q.diagram_url || '' : '';
+
+            if (type === 'quiz-diagram') {
+                addField('Pregunta (Ej: ¿Qué valor tiene S si E=5?)', 'q-diagram-question', 'text', q ? q.question_text : "");
+
+                const divImg = document.createElement('div');
+                divImg.className = 'form-group';
+                divImg.innerHTML = `
+                    <label>Imagen del Diagrama</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="q-diagram-url" value="${diagramUrl}" style="flex:1">
+                        <button class="modal-btn small-btn" onclick="uploadImageToStorage('q-diagram-url')" style="white-space:nowrap;">Subir Imagen</button>
+                    </div>
+                `;
+                container.appendChild(divImg);
+            }
         }
 
+        const options = optionsArr.join('\n');
         addField('Opciones (una por línea)', 'q-options', 'textarea', options);
-        addField('Índice Correcto (0, 1, 2...)', 'q-correct', 'number', correct);
 
-        // Show actual correct answer text
+        // Numbered preview for clarity
+        const previewDiv = document.createElement('div');
+        previewDiv.style.background = 'rgba(0,0,0,0.2)';
+        previewDiv.style.padding = '10px';
+        previewDiv.style.borderRadius = '8px';
+        previewDiv.style.marginBottom = '1rem';
+        previewDiv.innerHTML = `<label style="color:var(--secondary-color); font-size:0.8rem;">Vista previa de índices:</label>` +
+            optionsArr.map((opt, i) => `<div style="font-size:0.8rem; color:#aaa;">${i}: ${opt}</div>`).join('');
+        container.appendChild(previewDiv);
+
+        addField('Índice Correcto (Escribe el número)', 'q-correct', 'number', correct);
+
         const correctText = optionsArr[correct] || "N/A";
         const feedbackDiv = document.createElement('div');
         feedbackDiv.style.marginTop = "-10px";
         feedbackDiv.style.marginBottom = "15px";
         feedbackDiv.style.fontSize = "0.9rem";
-        feedbackDiv.innerHTML = `Respuesta Actual: <b style="color:var(--success)">${correctText}</b>`;
+        feedbackDiv.innerHTML = `Respuesta Correcta actual: <b style="color:var(--success)">${correctText}</b>`;
         container.appendChild(feedbackDiv);
     }
     else if (type === 'speech-practice') {
@@ -471,33 +505,7 @@ function renderQuestionFields(q = null) {
         addField('Texto para pronunciar', 'q-speech-text', 'textarea', text);
     }
     else if (type === 'listening-practice') {
-        const optionsArr = q ? q.options : ["Opción A", "Opción B", "Opción C", "Opción D"];
-        const options = optionsArr.join('\n');
-        const correct = q ? q.correct_answer : 0;
-        const audioUrl = q ? q.audio_url || '' : '';
-
-        addField('Pregunta específica', 'q-listening-question', 'text', q ? q.question_text : "What is the speaker talking about?");
-        addField('Opciones (una por línea)', 'q-options', 'textarea', options);
-        addField('Índice Correcto (0, 1, 2...)', 'q-correct', 'number', correct);
-
-        const correctText = optionsArr[correct] || "N/A";
-        const feedbackDiv = document.createElement('div');
-        feedbackDiv.style.marginTop = "-10px";
-        feedbackDiv.style.marginBottom = "15px";
-        feedbackDiv.style.fontSize = "0.9rem";
-        feedbackDiv.innerHTML = `Respuesta Actual: <b style="color:var(--success)">${correctText}</b>`;
-        container.appendChild(feedbackDiv);
-
-        const div = document.createElement('div');
-        div.className = 'form-group';
-        div.innerHTML = `
-            <label>Ruta del Audio</label>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="q-audio-url" value="${audioUrl}" style="flex:1">
-                <button class="modal-btn small-btn" onclick="uploadAudioToStorage('q-audio-url')" style="white-space:nowrap;">Subir Audio</button>
-            </div>
-        `;
-        container.appendChild(div);
+        // Already handled in the combined if block above
     }
     else if (type === 'builder') {
         const blocks = q ? (q.data.blocks).join(', ') : "SELECT, *, FROM, table";
