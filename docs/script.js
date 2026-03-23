@@ -2023,11 +2023,25 @@ function calculateLevenshteinSimilarity(s1, s2) {
 
 // 7. Builder Logic (SQL)
 function setupBuilder(game, container, onComplete) {
+    // Normalize data: If loaded from Supabase as a single exercise, wrap it into challenges array
+    if (!game.challenges && game.blocks) {
+        game.challenges = [{
+            goal: game.question_text || game.title || "Construye la consulta",
+            correct: game.correct_answer,
+            blocks: game.blocks
+        }];
+    }
+
     let currentChallengeIndex = 0;
     let currentQuery = [];
     let internalCorrect = 0;
 
     function showChallenge() {
+        if (!game.challenges || !game.challenges[currentChallengeIndex]) {
+            console.error("No challenge found at index", currentChallengeIndex, game);
+            container.innerHTML = '<div class="feedback-msg incorrect">Error: Datos de desafío no encontrados.</div>';
+            return;
+        }
         const challenge = game.challenges[currentChallengeIndex];
         currentQuery = [];
 

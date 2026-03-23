@@ -430,10 +430,15 @@ function renderQuestionFields(q = null) {
         container.appendChild(div);
     };
 
-    if (type === 'quiz-item') {
+    if (type === 'quiz-item' || type === 'quiz-diagram') {
         const optionsArr = q ? q.options : ["Opción A", "Opción B", "Opción C", "Opción D"];
         const options = optionsArr.join('\n');
         const correct = q ? q.correct_answer : 0;
+
+        if (type === 'quiz-diagram') {
+            addField('Pregunta (Ej: ¿Qué valor tiene S si E=5?)', 'q-diagram-question', 'text', q ? q.question_text : "");
+        }
+
         addField('Opciones (una por línea)', 'q-options', 'textarea', options);
         addField('Índice Correcto (0, 1, 2...)', 'q-correct', 'number', correct);
 
@@ -623,6 +628,11 @@ async function saveQuestion() {
 
     if (type === 'quiz-item') {
         payload.question_text = title;
+        payload.options = document.getElementById('q-options').value.split('\n').map(l => l.trim()).filter(l => l);
+        payload.correct_answer = parseInt(document.getElementById('q-correct').value) || 0;
+    }
+    else if (type === 'quiz-diagram') {
+        payload.question_text = document.getElementById('q-diagram-question').value;
         payload.options = document.getElementById('q-options').value.split('\n').map(l => l.trim()).filter(l => l);
         payload.correct_answer = parseInt(document.getElementById('q-correct').value) || 0;
     }
