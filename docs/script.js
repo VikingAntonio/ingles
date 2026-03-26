@@ -1,944 +1,87 @@
-const courseData = {
-    programming: {
-        title: "Programación (JavaScript)",
-        levels: [
-            {
-                id: 1,
-                title: "Nivel 1: Lógica y Algoritmos",
-                lesson: {
-                    title: "Pensamiento Lógico",
-                    content: `
-                        <h2>Fundamentos de la Lógica</h2>
-                        <p>Antes de codificar, debemos pensar como una computadora. Esto implica desglosar problemas en pasos pequeños (algoritmos) y entender el flujo de control.</p>
-                        <h3>Conceptos Clave:</h3>
-                        <ul>
-                            <li><strong>Secuencia:</strong> El orden importa. Las instrucciones se ejecutan una tras otra.</li>
-                            <li><strong>Selección (If/Else):</strong> Tomar decisiones basadas en condiciones.</li>
-                            <li><strong>Iteración (Bucles):</strong> Repetir acciones hasta que se cumpla una condición.</li>
-                        </ul>
-                    `
-                },
-                game: {
-                    type: "mixed",
-                    title: "Desafíos de Algoritmia",
-                    exercises: [
-                        // 1. Tipo de empleado
-                        {
-                            type: "sorter",
-                            title: "1.-Tipo de empleado",
-                            instruction: `Una empresa identifica el tipo de empleado:
-
-1 → Administrativo
-
-2 → Operativo
-
-3 → Gerente`,
-                            lines: [
-                                "Inicio",
-                                "Leer tipoEmpleado",
-                                "Según tipoEmpleado Hacer",
-                                "   Caso 1:",
-                                "      Escribir \"Empleado administrativo\"",
-                                "   Caso 2:",
-                                "      Escribir \"Empleado operativo\"",
-                                "   Caso 3:",
-                                "      Escribir \"Empleado gerente\"",
-                                "   Caso SiNo:",
-                                "      Escribir \"Tipo no válido\"",
-                                "FinSegún",
-                                "Fin"
-                            ]
-                        },
-
-                        // 2. Meta de ventas mensual
-                        {
-                            type: "flowchart-free",
-                            title: "2.-  Meta de ventas mensual",
-                            instruction: `Diseña un diagrama de flujo que:
-
-Pida:
-
-Meta de ventas
-
-Ventas realizadas
-
-Evaluación:
-
-Si ventas ≥ meta → "Meta alcanzada"
-
-Si ventas ≥ 80% de la meta → "Cerca de la meta"
-
-Si ventas < 80% de la meta → "Meta no alcanzada"
-
-Mostrar el porcentaje de cumplimiento`,
-                            items: [
-                                { id: "s", text: "Inicio" },
-                                { id: "inp", text: "Leer Meta y Ventas" },
-                                { id: "c1", text: "¿Ventas ≥ Meta?" },
-                                { id: "r1", text: "\"Meta alcanzada\"" },
-                                { id: "c2", text: "¿Ventas ≥ 80% Meta?" },
-                                { id: "r2", text: "\"Cerca de la meta\"" },
-                                { id: "r3", text: "\"Meta no alcanzada\"" },
-                                { id: "calc", text: "Mostrar % Cumplimiento" },
-                                { id: "f", text: "Fin" }
-                            ],
-                            solution: {
-                                nodes: [
-                                    { contentId: "s" }, { contentId: "inp" }, { contentId: "c1" },
-                                    { contentId: "r1" }, { contentId: "c2" }, { contentId: "r2" },
-                                    { contentId: "r3" }, { contentId: "calc" }, { contentId: "f" }
-                                ],
-                                edges: [
-                                    ["s", "inp"],
-                                    ["inp", "c1"],
-                                    ["c1", "r1"], // Si
-                                    ["c1", "c2"], // No
-                                    ["c2", "r2"], // Si
-                                    ["c2", "r3"], // No
-                                    ["r1", "calc"],
-                                    ["r2", "calc"],
-                                    ["r3", "calc"],
-                                    ["calc", "f"]
-                                ]
-                            }
-                        },
-
-                        // 3. Comisión de Ventas
-                        {
-                            type: "flowchart-free",
-                            title: "3.- Diseña un diagrama de flujo que:", // User requested title matched to input structure
-                            instruction: `Pida el monto de ventas del mes
-
-Calcule la comisión según:
-
-Ventas ≥ $20,000 → comisión 15%
-
-Ventas entre $10,000 y $19,999 → comisión 10%
-
-Ventas < $10,000 → comisión 5%
-
-Muestre el monto de la comisión y el total a recibir`,
-                            items: [
-                                { id: "s", text: "Inicio" },
-                                { id: "inp", text: "Leer Ventas" },
-                                { id: "c1", text: "¿Ventas ≥ 20,000?" },
-                                { id: "r1", text: "Comisión = 15%" },
-                                { id: "c2", text: "¿Ventas ≥ 10,000?" },
-                                { id: "r2", text: "Comisión = 10%" },
-                                { id: "r3", text: "Comisión = 5%" },
-                                { id: "out", text: "Mostrar Comisión y Total" },
-                                { id: "f", text: "Fin" }
-                            ],
-                            solution: {
-                                nodes: [
-                                    { contentId: "s" }, { contentId: "inp" }, { contentId: "c1" },
-                                    { contentId: "r1" }, { contentId: "c2" }, { contentId: "r2" },
-                                    { contentId: "r3" }, { contentId: "out" }, { contentId: "f" }
-                                ],
-                                edges: [
-                                    ["s", "inp"],
-                                    ["inp", "c1"],
-                                    ["c1", "r1"],
-                                    ["c1", "c2"],
-                                    ["c2", "r2"],
-                                    ["c2", "r3"],
-                                    ["r1", "out"],
-                                    ["r2", "out"],
-                                    ["r3", "out"],
-                                    ["out", "f"]
-                                ]
-                            }
-                        },
-
-                        // 4. Evaluación de crédito
-                        {
-                            type: "flowchart-free",
-                            title: "4.- Evaluación de crédito",
-                            instruction: `Diseña un diagrama de flujo que:
-
-Pida:
-
-Ingresos mensuales
-
-Historial crediticio (Bueno o Malo)
-
-Decida si el crédito es aprobado:
-
-Si ingresos ≥ $15,000 y historial bueno → "Crédito aprobado"
-
-Si ingresos ≥ $15,000 y historial malo → "Aprobado con condiciones"
-
-Si ingresos < $15,000 → "Crédito rechazado"`,
-                            items: [
-                                { id: "s", text: "Inicio" },
-                                { id: "inp", text: "Leer Ingresos/Historial" },
-                                { id: "c1", text: "¿Ingresos ≥ 15,000?" },
-                                { id: "c2", text: "¿Historial Bueno?" },
-                                { id: "r1", text: "\"Crédito aprobado\"" },
-                                { id: "r2", text: "\"Aprobado con condiciones\"" },
-                                { id: "r3", text: "\"Crédito rechazado\"" },
-                                { id: "f", text: "Fin" }
-                            ],
-                            solution: {
-                                nodes: [
-                                    { contentId: "s" }, { contentId: "inp" }, { contentId: "c1" },
-                                    { contentId: "c2" }, { contentId: "r1" }, { contentId: "r2" },
-                                    { contentId: "r3" }, { contentId: "f" }
-                                ],
-                                edges: [
-                                    ["s", "inp"],
-                                    ["inp", "c1"],
-                                    ["c1", "c2"], // Si ingresos >= 15000
-                                    ["c1", "r3"], // No
-                                    ["c2", "r1"], // Historial Bueno
-                                    ["c2", "r2"], // Historial Malo
-                                    ["r1", "f"],
-                                    ["r2", "f"],
-                                    ["r3", "f"]
-                                ]
-                            }
-                        },
-
-                        // 5. Precio con impuestos y envío
-                        {
-                            type: "flowchart-free",
-                            title: "5.- Precio con impuestos y envío",
-                            instruction: `Diseña un diagrama de flujo que:
-
-Pida:
-
-Precio del producto
-
-¿Es envío nacional o internacional?
-
-Cálculos:
-
-Impuesto:
-
-Nacional → 16%
-
-Internacional → 25%
-
-Envío:
-
-Compra ≥ $2,000 → envío gratis
-
-Compra < $2,000 → $150 de envío
-
-Mostrar el total final`,
-                            items: [
-                                { id: "s", text: "Inicio" },
-                                { id: "inp", text: "Leer Precio y Tipo" },
-                                { id: "c1", text: "¿Es Nacional?" },
-                                { id: "t1", text: "Impuesto = 16%" },
-                                { id: "t2", text: "Impuesto = 25%" },
-                                { id: "c2", text: "¿Compra ≥ 2,000?" },
-                                { id: "e1", text: "Envío Gratis" },
-                                { id: "e2", text: "Envío $150" },
-                                { id: "out", text: "Mostrar Total" },
-                                { id: "f", text: "Fin" }
-                            ],
-                            solution: {
-                                nodes: [
-                                    { contentId: "s" }, { contentId: "inp" }, { contentId: "c1" },
-                                    { contentId: "t1" }, { contentId: "t2" }, { contentId: "c2" },
-                                    { contentId: "e1" }, { contentId: "e2" }, { contentId: "out" }, { contentId: "f" }
-                                ],
-                                edges: [
-                                    ["s", "inp"],
-                                    ["inp", "c1"],
-                                    ["c1", "t1"],
-                                    ["c1", "t2"],
-                                    ["t1", "c2"],
-                                    ["t2", "c2"],
-                                    ["c2", "e1"],
-                                    ["c2", "e2"],
-                                    ["e1", "out"],
-                                    ["e2", "out"],
-                                    ["out", "f"]
-                                ]
-                            }
-                        },
-
-                        // 6. Tipo de empleado (Pseudocódigo) - Same as 1 but with "Caso:"
-                        {
-                            type: "sorter",
-                            title: "6.- Tipo de empleado",
-                            instruction: `Caso:
-Una empresa identifica el tipo de empleado:
-
-1 → Administrativo
-
-2 → Operativo
-
-3 → Gerente`,
-                            lines: [
-                                "Inicio",
-                                "Leer tipoEmpleado",
-                                "Según tipoEmpleado Hacer",
-                                "   Caso 1:",
-                                "      Escribir \"Empleado administrativo\"",
-                                "   Caso 2:",
-                                "      Escribir \"Empleado operativo\"",
-                                "   Caso 3:",
-                                "      Escribir \"Empleado gerente\"",
-                                "   Caso SiNo:",
-                                "      Escribir \"Tipo no válido\"",
-                                "FinSegún",
-                                "Fin"
-                            ]
-                        },
-
-                        // 7. Cantidad de productos vendidos
-                        {
-                            type: "sorter",
-                            title: "7.- Cantidad de productos vendidos",
-                            instruction: `Una tienda registra las ventas de 7 días y muestra el total vendido`,
-                            lines: [
-                                "Inicio",
-                                "total ← 0",
-                                "Para dia ← 1 Hasta 7 Hacer",
-                                "   Leer venta",
-                                "   total ← total + venta",
-                                "FinPara",
-                                "Escribir total",
-                                "Fin"
-                            ]
-                        },
-
-                        // 8. Ciclos
-                        {
-                            type: "sorter",
-                            title: "8.- ciclos",
-                            instruction: `Una empresa ingresa montos de ventas hasta que el usuario escriba 0.`,
-                            lines: [
-                                "Inicio",
-                                "total ← 0",
-                                "Repetir",
-                                "   Leer venta",
-                                "   total ← total + venta",
-                                "Hasta Que venta = 0",
-                                "Escribir total",
-                                "Fin"
-                            ]
-                        },
-
-                        // 9. Promedio de gastos
-                        {
-                            type: "sorter",
-                            title: "9.- Promedio de gastos",
-                            instruction: `calcule la media de gastos realizados en X cantidad de meses definidos.`,
-                            lines: [
-                                "Inicio",
-                                "Escribir \"Ingrese la cantidad de meses:\"",
-                                "Leer meses",
-                                "suma ← 0",
-                                "Para i ← 1 Hasta meses Hacer",
-                                "   Escribir \"Ingrese gasto del mes \", i",
-                                "   Leer gasto",
-                                "   suma ← suma + gasto",
-                                "FinPara",
-                                "media ← suma / meses",
-                                "Escribir \"La media de gastos es: \", media",
-                                "Fin"
-                            ]
-                        },
-
-                        // 10. Venta con descuento y recargo (compacto)
-                        {
-                            type: "flowchart-free",
-                            title: "10.-Venta con descuento y recargo (compacto)",
-                            instruction: `Diseña un diagrama de flujo para una venta que haga lo siguiente:
-
-Entrada de datos
-
-Monto de la compra
-
-Tipo de cliente (Normal o VIP)
-
-Forma de pago (Efectivo o Tarjeta)
-
-2️ Proceso: Descuento por tipo de cliente
-
-Si el cliente es VIP → 15% de descuento
-
-Si es Normal → 5% de descuento
-
-3️ Decisión: Forma de pago
-
-Si paga en Efectivo → 5% de descuento adicional
-
-Si paga con Tarjeta → 10% de recargo
-
-4️ Proceso: Total final
-
-Calcular el total final aplicando:
-
-Descuentos
-
-Recargo (si aplica)
-
-5️ Decisión final
-
-Si el total final ≥ $5,000 → Mostrar "Venta importante"
-
-Si es menor → Mostrar "Venta regular"
-
-6 Salida
-
-Mostrar:
-
-Monto original
-
-Total de descuentos
-
-Recargo (si hubo)
-
-Total a pagar
-
-Mensaje final`,
-                            isExpanded: true,
-                            items: [
-                                { id: "s", text: "Inicio" },
-                                { id: "inp", text: "Leer Datos" },
-                                { id: "vip", text: "¿Es VIP?" },
-                                { id: "d1", text: "Desc 15%" },
-                                { id: "d2", text: "Desc 5%" },
-                                { id: "pago", text: "¿Efectivo?" },
-                                { id: "d3", text: "Desc Extra 5%" },
-                                { id: "r1", text: "Recargo 10%" },
-                                { id: "tot", text: "Calc Total Final" },
-                                { id: "chk", text: "¿Total ≥ 5,000?" },
-                                { id: "msg1", text: "\"Venta importante\"" },
-                                { id: "msg2", text: "\"Venta regular\"" },
-                                { id: "out", text: "Mostrar Todo" },
-                                { id: "f", text: "Fin" }
-                            ],
-                            solution: {
-                                nodes: [
-                                    { contentId: "s" }, { contentId: "inp" }, { contentId: "vip" },
-                                    { contentId: "d1" }, { contentId: "d2" }, { contentId: "pago" },
-                                    { contentId: "d3" }, { contentId: "r1" }, { contentId: "tot" },
-                                    { contentId: "chk" }, { contentId: "msg1" }, { contentId: "msg2" },
-                                    { contentId: "out" }, { contentId: "f" }
-                                ],
-                                edges: [
-                                    ["s", "inp"],
-                                    ["inp", "vip"],
-                                    ["vip", "d1"],
-                                    ["vip", "d2"],
-                                    ["d1", "pago"],
-                                    ["d2", "pago"],
-                                    ["pago", "d3"],
-                                    ["pago", "r1"],
-                                    ["d3", "tot"],
-                                    ["r1", "tot"],
-                                    ["tot", "chk"],
-                                    ["chk", "msg1"],
-                                    ["chk", "msg2"],
-                                    ["msg1", "out"],
-                                    ["msg2", "out"],
-                                    ["out", "f"]
-                                ]
-                            }
-                        }
-                    ]
-                }
-            },
-            {
-                id: 2,
-                title: "Nivel 2: DOM y Web Interitiva",
-                lesson: {
-                    title: "El Document Object Model (DOM)",
-                    content: `
-                        <h2>Controlando la Web</h2>
-                        <p>El DOM es la estructura de árbol que representa tu página HTML. Con JavaScript, podemos modificarlo en tiempo real.</p>
-                        <div class="code-block">document.getElementById('miBoton').style.color = 'red';</div>
-                        <p>CSS Grid y Flexbox son esenciales para maquetar estos elementos de forma profesional.</p>
-                    `
-                },
-                game: {
-                    type: "mixed",
-                    title: "Maestría Web",
-                    exercises: [
-                        { type: "match", title: "Selectores CSS", pairs: [{ es: ".clase", en: "Class" }, { es: "#id", en: "ID" }, { es: "*", en: "Universal" }, { es: "div > p", en: "Hijo directo" }] },
-                        { type: "builder", title: "Crear Elemento", challenges: [{ goal: "Crear un div nuevo", correct: "const div = document.createElement('div')", blocks: ["const", "div", "=", "document.createElement('div')", "new Div()", ".append()"] }] },
-                        { type: "quiz-item", question: "¿Qué propiedad cambia el color de fondo?", options: ["color", "background-color", "bg-color", "area-color"], correct: 1 },
-                        { type: "sorter", title: "CSS Grid Layout", lines: [".container {", "  display: grid;", "  grid-template-columns: 1fr 1fr;", "  gap: 20px;", "}"] },
-                        { type: "match", title: "Eventos JS", pairs: [{ es: "Click", en: "onclick" }, { es: "Cambio Input", en: "onchange" }, { es: "Envío Form", en: "onsubmit" }, { es: "Mouse Encima", en: "onmouseover" }] },
-                        { type: "builder", title: "Query Selector", challenges: [{ goal: "Seleccionar botón con clase 'btn'", correct: "document.querySelector('.btn')", blocks: ["document", ".querySelector('.btn')", ".getElementById('btn')", "$('.btn')"] }] },
-                        { type: "quiz-item", question: "¿Qué hace `display: flex;` por defecto?", options: ["Pone elementos en columna", "Pone elementos en fila", "Oculta elementos", "Centra todo"], correct: 1 },
-                        { type: "sorter", title: "Estructura HTML5", lines: ["<!DOCTYPE html>", "<html>", "<head>...</head>", "<body>...</body>", "</html>"] },
-                        { type: "match", title: "Posicionamiento", pairs: [{ es: "Fijo en pantalla", en: "fixed" }, { es: "Relativo a sí mismo", en: "relative" }, { es: "Absoluto al padre", en: "absolute" }, { es: "Pegajoso", en: "sticky" }] },
-                        { type: "builder", title: "Fetch Básico", challenges: [{ goal: "Obtener datos de API", correct: "fetch('/api').then(res => res.json())", blocks: ["fetch('/api')", ".then(res => res.json())", ".get()", "await"] }] }
-                    ]
-                }
-            },
-            {
-                id: 3,
-                title: "Nivel 3: JavaScript Avanzado",
-                lesson: {
-                    title: "JavaScript Moderno (ES6+)",
-                    content: `
-                        <h2>Potencia y Elegancia</h2>
-                        <p>Las últimas versiones de JS traen características poderosas como Funciones Flecha, Destructuring, Clases y Promesas.</p>
-                        <div class="code-block">const suma = (a, b) => a + b;</div>
-                    `
-                },
-                game: {
-                    type: "mixed",
-                    title: "Ingeniero de Software",
-                    exercises: [
-                        { type: "quiz-item", question: "¿Qué retorna `[1, 2, 3].map(x => x * 2)`?", options: ["[1, 2, 3]", "[2, 4, 6]", "6", "Error"], correct: 1 },
-                        { type: "builder", title: "Promesa", challenges: [{ goal: "Crear promesa simple", correct: "new Promise((resolve, reject) => { })", blocks: ["new Promise", "((resolve, reject) => { })", "function Promise", "async"] }] },
-                        { type: "match", title: "Métodos Array", pairs: [{ es: "¿Cumple alguno?", en: "some" }, { es: "¿Cumplen todos?", en: "every" }, { es: "Acumular valor", en: "reduce" }, { es: "Aplanar", en: "flat" }] },
-                        { type: "sorter", title: "Async/Await Try-Catch", lines: ["try {", "  const data = await api.get();", "} catch (error) {", "  console.error(error);", "}"] },
-                        { type: "quiz-item", question: "Local Storage guarda datos como:", options: ["Objetos", "Strings", "Arrays", "Binario"], correct: 1 },
-                        { type: "builder", title: "Desestructuración Avanzada", challenges: [{ goal: "Renombrar al extraer", correct: "const { a: nuevoA } = objeto", blocks: ["const", "{ a: nuevoA }", "=", "objeto", "{ a as nuevoA }"] }] },
-                        { type: "match", title: "Nuevas Estructuras", pairs: [{ es: "Valores únicos", en: "Set" }, { es: "Clave-Valor", en: "Map" }, { es: "Símbolo único", en: "Symbol" }, { es: "Entero gigante", en: "BigInt" }] },
-                        { type: "quiz-item", question: "¿Cuál es la diferencia entre `==` y `===`?", options: ["Ninguna", "=== compara tipo y valor", "== es más rápido", "=== no existe"], correct: 1 },
-                        { type: "sorter", title: "Módulo Export", lines: ["const miFunc = () => {};", "export default miFunc;", "import miFunc from './file';", "miFunc();"] },
-                        { type: "builder", title: "Operador Spread", challenges: [{ goal: "Copiar array", correct: "const copy = [...original]", blocks: ["const", "copy", "=", "[...original]", "original.copy()", "spread"] }] }
-                    ]
-                }
+// Initialize Supabase Client
+const supabaseUrl = 'https://ojpyfjgkffmzwvukjagf.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcHlmamdrZmZtend2dWtqYWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNDIwMzYsImV4cCI6MjA3OTcxODAzNn0.dlVYmoMumBse_O1PLBx0FeNITqY4YktefD6l_uonSgo';
+const _supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+let courseData = {};
+
+async function syncCourseData() {
+    try {
+        console.log("🔄 Syncing course data from Supabase...");
+        const { data: subjects, error: sErr } = await _supabase.from('subjects').select('*');
+        if (sErr) throw sErr;
+
+        const newCourseData = {};
+        for (const s of subjects) {
+            newCourseData[s.slug] = {
+                id: s.id,
+                title: s.title,
+                levels: []
+            };
+
+            const { data: levels, error: lErr } = await _supabase
+                .from('levels')
+                .select('*')
+                .eq('subject_id', s.id)
+                .order('level_number', { ascending: true });
+
+            if (lErr) throw lErr;
+
+            for (const l of levels) {
+                const { data: questions, error: qErr } = await _supabase
+                    .from('questions')
+                    .select('*')
+                    .eq('level_id', l.id)
+                    .order('order_index', { ascending: true });
+
+                if (qErr) throw qErr;
+
+                // Map database structure to game engine structure
+                newCourseData[s.slug].levels.push({
+                    db_id: l.id,
+                    id: l.level_number,
+                    title: l.title,
+                    schema_url: l.schema_url,
+                    lesson: {
+                        title: l.lesson_title,
+                        content: l.lesson_content
+                    },
+                    game: {
+                        type: l.game_type,
+                        title: l.title,
+                        showSchemaDiagram: !!l.schema_url,
+                        exercises: questions.map(q => {
+                            // Sync mapping: prioritize 'data' column if it exists (JSONB),
+                            // but also check 'details' for legacy consistency if used.
+                            const details = q.data || {};
+
+                            return {
+                                id: q.id,
+                                type: q.type,
+                                title: q.title,
+                                question: q.title,
+                                instruction: q.instruction,
+                                diagram_url: q.diagram_url,
+                                audio_url: q.audio_url,
+                                options: q.options,
+                                correct: q.correct_answer,
+                                correct_answer: q.correct_answer,
+                                ...details
+                            };
+                        })
+                    }
+                });
             }
-        ]
-    },
-    english: {
-        title: "Inglés Técnico",
-        levels: [
-            {
-                id: 1,
-                title: "Nivel 1: Conceptos Básicos",
-                lesson: {
-                    title: "Vocabulario para Desarrolladores",
-                    content: `
-                        <h2>Conceptos Básicos</h2>
-                        <p>El inglés es el idioma universal de la tecnología. Aquí tienes algunos términos clave:</p>
-                        <ul>
-                            <li><strong>Bug:</strong> Error en el código.</li>
-                            <li><strong>Feature:</strong> Una nueva funcionalidad.</li>
-                        </ul>
-                    `
-                },
-                game: {
-                    type: "mixed",
-                    title: "English Practice",
-                    exercises: [
-                        {
-                            type: "speech-practice",
-                            title: "Speaking Practice",
-                            text: "Menutech It is a company in constant development of software, at the forefront, committed to provide innovations to the different business models of our clients."
-                        },
-                        {
-                            type: "listening-practice",
-                            title: "Listening Practice",
-                            script: "Remote work offers flexibility, but the main drawback is the loss of company culture and spontaneous collaboration.",
-                            question: "According to the speaker, what is the main drawback of remote work?",
-                            options: [
-                                "Reduced productivity",
-                                "Lack of flexibility",
-                                "Loss of company culture and spontaneous collaboration",
-                                "Increased costs for the company"
-                            ],
-                            correct: 2
-                        }
-                    ]
-                }
-            },
-            {
-                id: 2,
-                title: "Nivel 2: Listening Comprehension",
-                lesson: {
-                    title: "Escucha Activa",
-                    content: `
-                        <h2>Comprensión Auditiva</h2>
-                        <p>Escuchar con atención es clave para entender requerimientos y colaborar en equipos internacionales.</p>
-                        <p>En este nivel, practicarás la comprensión de mensajes específicos en audios cortos.</p>
-                    `
-                },
-                game: {
-                    type: "mixed",
-                    title: "Listening Exam",
-                    exercises: [
-                        {
-                            type: "listening-practice",
-                            title: "Exercise 1: Restaurant Discount",
-                            script: "This month, the restaurant is offering a twenty percent discount specifically to attract new customers through social media, not to reward existing ones.",
-                            question: "Why is the restaurant offering a discount?",
-                            options: [
-                                "To reward loyal customers",
-                                "To attract new customers",
-                                "To increase menu prices",
-                                "To reduce operating costs"
-                            ],
-                            correct: 1
-                        },
-                        {
-                            type: "listening-practice",
-                            title: "Exercise 2: Customer Service",
-                            script: "The manager explains that good customer service is important because it increases repeat visits and customer recommendations, which directly improves sales.",
-                            question: "Why does the manager say customer service is important?",
-                            options: [
-                                "Because it reduces staff workload",
-                                "Because it improves sales through repeat visits and recommendations",
-                                "Because it lowers food costs",
-                                "Because it replaces advertising"
-                            ],
-                            correct: 1
-                        },
-                        {
-                            type: "listening-practice",
-                            title: "Exercise 3: Marketing Platform",
-                            script: "For marketing purposes, the restaurant uses Instagram as its main platform and does not use email marketing or television advertising.",
-                            question: "Which marketing platform does the restaurant mainly use?",
-                            options: [
-                                "Email marketing",
-                                "Television advertising",
-                                "Instagram",
-                                "Printed flyers"
-                            ],
-                            correct: 2
-                        },
-                        {
-                            type: "listening-practice",
-                            title: "Exercise 4: Lunch Menu",
-                            script: "The restaurant offers a cheaper lunch menu only to increase sales during slow hours, not to change its dinner prices.",
-                            question: "What is the purpose of the cheaper lunch menu?",
-                            options: [
-                                "To reduce dinner prices",
-                                "To attract new employees",
-                                "To increase sales during slow hours",
-                                "To improve food quality"
-                            ],
-                            correct: 2
-                        },
-                        {
-                            type: "listening-practice",
-                            title: "Exercise 5: Online Reviews",
-                            script: "The owner states that online reviews strongly influence customers’ decisions, especially when they are choosing a restaurant for the first time.",
-                            question: "What do online reviews influence?",
-                            options: [
-                                "Customers’ decisions, especially first-time visits",
-                                "Staff training",
-                                "Menu design",
-                                "Restaurant location"
-                            ],
-                            correct: 0
-                        },
-                        {
-                            type: "listening-practice",
-                            title: "Exercise 6: Loyalty Program",
-                            script: "The restaurant launched a loyalty program to encourage repeat customers, offering a free meal after ten visits.",
-                            question: "What is the main goal of the loyalty program?",
-                            options: [
-                                "To attract new employees",
-                                "To reduce food waste",
-                                "To increase menu prices",
-                                "To encourage repeat customers"
-                            ],
-                            correct: 3
-                        },
-                        {
-                            type: "listening-practice",
-                            title: "Exercise 7: Menu Design",
-                            script: "The marketing manager decided to change the menu design to make the prices look clearer and easier to understand.",
-                            question: "Why was the menu design changed?",
-                            options: [
-                                "To add more dishes",
-                                "To increase prices",
-                                "To make prices clearer and easier to understand",
-                                "To reduce printing costs"
-                            ],
-                            correct: 2
-                        },
-                        {
-                            type: "listening-practice",
-                            title: "Exercise 8: Online Reservations",
-                            script: "The restaurant introduced online reservations to reduce waiting times and improve the customer experience.",
-                            question: "Why did the restaurant introduce online reservations?",
-                            options: [
-                                "To reduce waiting times and improve the customer experience",
-                                "To increase menu prices",
-                                "To hire fewer staff",
-                                "To close earlier"
-                            ],
-                            correct: 0
-                        },
-                        {
-                            type: "listening-practice",
-                            title: "Exercise 9: Staff Training",
-                            script: "The owner decided to invest in staff training to ensure consistent service quality across all shifts.",
-                            question: "Why did the owner invest in staff training?",
-                            options: [
-                                "To reduce salaries",
-                                "To speed up cooking time",
-                                "To ensure consistent service quality across all shifts",
-                                "To change the menu"
-                            ],
-                            correct: 2
-                        },
-                        {
-                            type: "listening-practice",
-                            title: "Exercise 10: Website Update",
-                            script: "The restaurant decided to update its website to make online ordering faster and more convenient for customers.",
-                            question: "Why did the restaurant update its website?",
-                            options: [
-                                "To change the restaurant’s name",
-                                "To reduce staff costs",
-                                "To remove the menu",
-                                "To make online ordering faster and more convenient for customers"
-                            ],
-                            correct: 3
-                        }
-                    ]
-                }
-            }
-        ]
-    },
-    database: {
-        title: "Bases de Datos (SQL)",
-        levels: [
-            {
-                id: 1,
-                title: "Nivel 1: SELECT Básico",
-                lesson: {
-                    title: "Fundamentos de SQL",
-                    content: `
-                        <h2>Structured Query Language</h2>
-                        <p>SQL se utiliza para comunicarse con bases de datos. Los comandos más comunes son:</p>
-                        <h3>SELECT</h3>
-                        <p>Para recuperar datos de una tabla.</p>
-                        <div class="code-block">SELECT nombre, edad FROM usuarios;</div>
-                    `
-                },
-                game: {
-                    type: "builder",
-                    title: "SQL Builder: SELECT Queries",
-                    challenges: [
-                        {
-                            goal: "Pregunta 1: Selecciona todos los campos de la tabla 'usuarios'.",
-                            correct: "SELECT * FROM usuarios",
-                            blocks: ["SELECT", "*", "FROM", "usuarios", "WHERE", "id", "nombre"]
-                        },
-                        {
-                            goal: "Pregunta 2: Obtener el total de ingresos generados por cada venta.",
-                            correct: "SELECT SUM(precio * cantidad) FROM ventas",
-                            blocks: ["SELECT", "SUM(precio * cantidad)", "FROM", "ventas", "COUNT(*)", "precio", "cantidad", "*"]
-                        },
-                        {
-                            goal: "Pregunta 3: Mostrar únicamente el nombre del producto y su precio.",
-                            correct: "SELECT nombre, precio FROM productos",
-                            blocks: ["SELECT", "nombre,", "precio", "FROM", "productos", "*", "WHERE", "categoria"]
-                        },
-                        {
-                            goal: "Pregunta 4: Listar las ventas cuya cantidad vendida sea mayor a 5 unidades.",
-                            correct: "SELECT * FROM ventas WHERE cantidad > 5",
-                            blocks: ["SELECT", "*", "FROM", "ventas", "WHERE", "cantidad", ">", "5", "=", "<", ">="]
-                        },
-                        {
-                            goal: "Pregunta 5: Mostrar las ventas que pertenezcan a la categoría 'Electrónica'.",
-                            correct: "SELECT * FROM ventas WHERE categoria = 'Electrónica'",
-                            blocks: ["SELECT", "*", "FROM", "ventas", "WHERE", "categoria", "=", "'Electrónica'", "LIKE", "'Ropa'", "'Alimentos'"]
-                        },
-                        {
-                            goal: "Pregunta 6: Obtener las ventas donde el precio del producto sea mayor a 1,000.",
-                            correct: "SELECT * FROM ventas WHERE precio > 1000",
-                            blocks: ["SELECT", "*", "FROM", "ventas", "WHERE", "precio", ">", "1000", ">=", "=", "<", "500"]
-                        },
-                        {
-                            goal: "Pregunta 7: Listar las ventas ordenadas por precio de menor a mayor.",
-                            correct: "SELECT * FROM ventas ORDER BY precio ASC",
-                            blocks: ["SELECT", "*", "FROM", "ventas", "ORDER BY", "precio", "ASC", "DESC", "WHERE", "cantidad"]
-                        },
-                        {
-                            goal: "Pregunta 8: Mostrar las ventas ordenadas por cantidad vendida de mayor a menor.",
-                            correct: "SELECT * FROM ventas ORDER BY cantidad DESC",
-                            blocks: ["SELECT", "*", "FROM", "ventas", "ORDER BY", "cantidad", "DESC", "ASC", "LIMIT", "precio"]
-                        },
-                        {
-                            goal: "Pregunta 9: Obtener solo las primeras 10 ventas registradas.",
-                            correct: "SELECT * FROM ventas LIMIT 10",
-                            blocks: ["SELECT", "*", "FROM", "ventas", "LIMIT", "10", "WHERE", "ORDER BY", "5", "20"]
-                        },
-                        {
-                            goal: "Pregunta 10: Contar cuántas ventas existen en total en la base de datos.",
-                            correct: "SELECT COUNT(*) FROM ventas",
-                            blocks: ["SELECT", "COUNT(*)", "FROM", "ventas", "SUM(*)", "TOTAL(*)", "*", "AVG(*)"]
-                        }
-                    ]
-                }
-            },
-            {
-                id: 2,
-                title: "SQL queries",
-                lesson: {
-                    title: "Consultas Avanzadas y Joins",
-                    content: `
-                        <h2>Esquema Empresarial</h2>
-                        <p>En entornos reales, los datos están repartidos en múltiples tablas. Usamos <strong>JOIN</strong> para combinarlas.</p>
-                        <h3>Tipos de Joins</h3>
-                        <ul>
-                            <li><strong>INNER JOIN:</strong> Registros con valores coincidentes en ambas tablas.</li>
-                            <li><strong>LEFT JOIN:</strong> Todos los registros de la tabla izquierda y los coincidentes de la derecha.</li>
-                        </ul>
-                    `
-                },
-                game: {
-                    type: "builder",
-                    title: "SQL Builder: Enterprise Queries",
-                    showSchemaDiagram: true,
-                    challenges: [
-                        {
-                            goal: "Pregunta 1: Obtener el nombre del usuario y el nombre de su rol asignado.",
-                            correct: "SELECT usuarios.nombre, roles.nombre_rol FROM usuarios JOIN roles ON usuarios.id_rol = roles.id_rol",
-                            blocks: ["SELECT", "usuarios.nombre,", "roles.nombre_rol", "FROM", "usuarios", "JOIN", "roles", "ON", "usuarios.id_rol", "=", "roles.id_rol", "WHERE"]
-                        },
-                        {
-                            goal: "Pregunta 2: Listar los nombres de usuarios que tienen un plan 'Premium'.",
-                            correct: "SELECT usuarios.nombre FROM usuarios JOIN suscripciones ON usuarios.id_usuario = suscripciones.id_usuario JOIN planes ON suscripciones.id_plan = planes.id_plan WHERE planes.nombre_plan = 'Premium'",
-                            blocks: ["SELECT", "usuarios.nombre", "FROM", "usuarios", "JOIN", "suscripciones", "ON", "usuarios.id_usuario", "=", "suscripciones.id_usuario", "JOIN", "planes", "ON", "suscripciones.id_plan", "=", "planes.id_plan", "WHERE", "planes.nombre_plan", "=", "'Premium'"]
-                        },
-                        {
-                            goal: "Pregunta 3: Contar cuántos usuarios tienen el estado 'ACTIVO'.",
-                            correct: "SELECT COUNT(*) FROM usuarios WHERE estado = 'ACTIVO'",
-                            blocks: ["SELECT", "COUNT(*)", "FROM", "usuarios", "WHERE", "estado", "=", "'ACTIVO'", "'INACTIVO'"]
-                        },
-                        {
-                            goal: "Pregunta 4: Mostrar el nombre y precio de los planes de las suscripciones que están 'ACTIVA'.",
-                            correct: "SELECT planes.nombre_plan, planes.precio FROM suscripciones JOIN planes ON suscripciones.id_plan = planes.id_plan WHERE suscripciones.estado = 'ACTIVA'",
-                            blocks: ["SELECT", "planes.nombre_plan,", "planes.precio", "FROM", "suscripciones", "JOIN", "planes", "ON", "suscripciones.id_plan", "=", "planes.id_plan", "WHERE", "suscripciones.estado", "=", "'ACTIVA'"]
-                        },
-                        {
-                            goal: "Pregunta 5: Obtener el precio promedio de todos los planes disponibles.",
-                            correct: "SELECT AVG(precio) FROM planes",
-                            blocks: ["SELECT", "AVG(precio)", "FROM", "planes", "SUM(precio)", "COUNT(precio)"]
-                        },
-                        {
-                            goal: "Pregunta 6: Listar usuarios y su fecha de fin de suscripción, ordenados por la fecha más cercana a vencer.",
-                            correct: "SELECT usuarios.nombre, suscripciones.fecha_fin FROM usuarios JOIN suscripciones ON usuarios.id_usuario = suscripciones.id_usuario ORDER BY suscripciones.fecha_fin ASC",
-                            blocks: ["SELECT", "usuarios.nombre,", "suscripciones.fecha_fin", "FROM", "usuarios", "JOIN", "suscripciones", "ON", "usuarios.id_usuario", "=", "suscripciones.id_usuario", "ORDER BY", "suscripciones.fecha_fin", "ASC", "DESC"]
-                        },
-                        {
-                            goal: "Pregunta 7: Mostrar los nombres de roles que no tienen ningún usuario asignado.",
-                            correct: "SELECT roles.nombre_rol FROM roles LEFT JOIN usuarios ON roles.id_rol = usuarios.id_rol WHERE usuarios.id_usuario IS NULL",
-                            blocks: ["SELECT", "roles.nombre_rol", "FROM", "roles", "LEFT JOIN", "usuarios", "ON", "roles.id_rol", "=", "usuarios.id_rol", "WHERE", "usuarios.id_usuario", "IS NULL", "IS NOT NULL"]
-                        },
-                        {
-                            goal: "Pregunta 8: Obtener el total recaudado (suma de precios) por cada tipo de plan en suscripciones 'ACTIVA'.",
-                            correct: "SELECT planes.nombre_plan, SUM(planes.precio) FROM suscripciones JOIN planes ON suscripciones.id_plan = planes.id_plan WHERE suscripciones.estado = 'ACTIVA' GROUP BY planes.nombre_plan",
-                            blocks: ["SELECT", "planes.nombre_plan,", "SUM(planes.precio)", "FROM", "suscripciones", "JOIN", "planes", "ON", "suscripciones.id_plan", "=", "planes.id_plan", "WHERE", "suscripciones.estado", "=", "'ACTIVA'", "GROUP BY", "planes.nombre_plan"]
-                        },
-                        {
-                            goal: "Pregunta 9: Seleccionar todos los usuarios cuyo email termine en '@gmail.com'.",
-                            correct: "SELECT * FROM usuarios WHERE email LIKE '%@gmail.com'",
-                            blocks: ["SELECT", "*", "FROM", "usuarios", "WHERE", "email", "LIKE", "'%@gmail.com'", "'gmail%'"]
-                        },
-                        {
-                            goal: "Pregunta 10: Mostrar los 3 planes más caros.",
-                            correct: "SELECT * FROM planes ORDER BY precio DESC LIMIT 3",
-                            blocks: ["SELECT", "*", "FROM", "planes", "ORDER BY", "precio", "DESC", "LIMIT", "3", "ASC", "5"]
-                        }
-                    ]
-                }
-            },
-            {
-                id: 3,
-                title: "Algebra Booleana",
-                lesson: {
-                    title: "Logica y Algebra de datos",
-                    content: `
-                        <h2>Lógica de Consultas</h2>
-                        <p>Las consultas SQL complejas se basan en la lógica booleana. Entender cómo combinar condiciones con AND (∧), OR (∨) y NOT (¬) es fundamental para filtrar datos con precisión.</p>
-                        <p><strong>Leyenda de Variables:</strong></p>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; font-family: monospace;">
-                            <div>U: Usuario activo</div>
-                            <div>S: Suscripción activa</div>
-                            <div>P: Plan Premium</div>
-                            <div>A: Administrador</div>
-                            <div>R: Pago aprobado</div>
-                            <div>M: Monto > 100</div>
-                            <div>L: Sesión activa</div>
-                            <div>H: Sesión no vencida</div>
-                        </div>
-                        <ul style="margin-top: 1rem;">
-                            <li><strong>∧ (AND):</strong> Ambas condiciones deben cumplirse.</li>
-                            <li><strong>∨ (OR):</strong> Al menos una condición debe cumplirse.</li>
-                            <li><strong>¬ (NOT):</strong> Invierte el valor de la condición (Falso se vuelve Verdadero y viceversa).</li>
-                        </ul>
-                    `
-                },
-                game: {
-                    type: "mixed",
-                    title: "Desafío de Lógica Booleana",
-                    showSchemaDiagram: true,
-                    exercises: [
-                        {
-                            type: "quiz-item",
-                            question: "1️⃣ Obtener usuarios activos (U), con suscripción activa (S) y plan premium (P).",
-                            options: ["A) U ∧ S ∨ P", "B) U ∧ S ∧ P", "C) (U ∨ S) ∧ P", "D) U ∨ (S ∧ P)"],
-                            correct: 1
-                        },
-                        {
-                            type: "quiz-item",
-                            question: "2️⃣ Obtener usuarios admin (A) O activos (U) con suscripción activa (S).",
-                            options: ["A) (U ∧ S) ∨ A", "B) U ∧ (S ∨ A)", "C) U ∨ S ∨ A", "D) (U ∨ S) ∧ A"],
-                            correct: 0
-                        },
-                        {
-                            type: "quiz-item",
-                            question: "3️⃣ Obtener pagos aprobados (R), monto mayor a 100 (M) y usuario activo (U).",
-                            options: ["A) R ∧ (M ∨ U)", "B) (R ∧ M) ∧ U", "C) R ∨ M ∧ U", "D) (R ∨ M) ∧ U"],
-                            correct: 1
-                        },
-                        {
-                            type: "quiz-item",
-                            question: "4️⃣ Obtener sesiones activas (L), no vencidas (H) y usuario activo (U).",
-                            options: ["A) L ∧ H ∧ U", "B) L ∨ (H ∧ U)", "C) (L ∧ H) ∨ U", "D) L ∧ (H ∨ U)"],
-                            correct: 0
-                        },
-                        {
-                            type: "quiz-item",
-                            question: "5️⃣ Obtener usuarios activos (U) que sean premium (P) O admin (A).",
-                            options: ["A) U ∧ (P ∨ A)", "B) (U ∧ P) ∨ A", "C) U ∨ (P ∧ A)", "D) (U ∨ P) ∧ A"],
-                            correct: 0
-                        },
-                        {
-                            type: "quiz-item",
-                            question: "6️⃣ Obtener usuarios activos (U) con suscripción activa (S) y (premium (P) O admin (A)).",
-                            options: ["A) U ∧ S ∧ (P ∨ A)", "B) (U ∧ S ∧ P) ∨ A", "C) U ∧ (S ∨ P) ∧ A", "D) (U ∨ S) ∧ (P ∨ A)"],
-                            correct: 0
-                        },
-                        {
-                            type: "quiz-item",
-                            question: "7️⃣ Obtener pagos aprobados (R) y monto > 100 (M), o que el usuario sea admin (A) con suscripción activa (S).",
-                            options: ["A) (R ∧ M) ∨ (A ∧ S)", "B) R ∧ (M ∨ A) ∧ S", "C) (R ∨ M) ∧ (A ∧ S)", "D) R ∧ M ∧ A ∨ S"],
-                            correct: 0
-                        },
-                        {
-                            type: "quiz-item",
-                            question: "8️⃣ Obtener usuarios activos (U) con sesión activa (L) y no vencida (H), y además premium (P).",
-                            options: ["A) U ∧ L ∧ H ∧ P", "B) (U ∧ L) ∨ (H ∧ P)", "C) U ∧ (L ∨ H) ∧ P", "D) (U ∨ L) ∧ H ∧ P"],
-                            correct: 0
-                        },
-                        {
-                            type: "quiz-item",
-                            question: "9️⃣ Obtener usuarios que NO sean activos (¬U) pero tengan suscripción activa (S) y (premium (P) O admin (A)).",
-                            options: ["A) ¬U ∧ S ∧ (P ∨ A)", "B) ¬(U ∧ S) ∧ (P ∨ A)", "C) ¬U ∨ S ∧ (P ∨ A)", "D) (¬U ∧ S ∧ P) ∨ A"],
-                            correct: 0
-                        },
-                        {
-                            type: "quiz-item",
-                            question: "🔟 Obtener usuarios activos (U) con suscripción activa (S) y pagos aprobados (R) mayores a 100 (M), o que sean admin (A).",
-                            options: ["A) (U ∧ S ∧ R ∧ M) ∨ A", "B) U ∧ S ∧ (R ∨ M) ∨ A", "C) (U ∨ S) ∧ (R ∧ M) ∨ A", "D) U ∧ (S ∧ R ∧ M ∨ A)"],
-                            correct: 0
-                        }
-                    ]
-                }
-            }
-        ]
+        }
+        courseData = newCourseData;
+        console.log("✅ Sync complete:", courseData);
+    } catch (err) {
+        console.error("❌ Sync failed:", err);
     }
-};
+}
+
+// Initial Sync
+syncCourseData();
 // Global State
 let currentState = {
     subject: null,
@@ -968,15 +111,15 @@ const btnBackLevels = document.getElementById('btn-back-levels');
 
 // Event Listeners
 cards.forEach(card => {
-    card.addEventListener('click', () => {
+    card.addEventListener('click', async () => {
         const subject = card.getAttribute('data-subject');
-        if (subject) openSubject(subject);
+        if (subject) await openSubject(subject);
     });
 });
 
 if (backBtn) {
-    backBtn.addEventListener('click', () => {
-        if (currentState.subject) openSubject(currentState.subject);
+    backBtn.addEventListener('click', async () => {
+        if (currentState.subject) await openSubject(currentState.subject);
     });
 }
 
@@ -994,15 +137,32 @@ if (navBtns) {
 }
 
 // Navigation Functions
-function openSubject(subject) {
+async function openSubject(subject) {
+    console.log("Opening subject:", subject);
+
+    // Ensure data is loaded
+    if (!courseData || !courseData[subject]) {
+        console.log("Data missing for subject, syncing...");
+        await syncCourseData();
+    }
+
+    if (!courseData[subject]) {
+        console.error("Subject not found even after sync:", subject);
+        return;
+    }
+
     currentState.subject = subject;
     levelSubjectTitle.textContent = courseData[subject].title;
     renderLevelSelection(subject);
+
+    // Navigation fix: decisive class toggling
     homeView.classList.remove('active');
     homeView.classList.add('hidden');
     appView.classList.remove('active');
     appView.classList.add('hidden');
+
     levelView.classList.remove('hidden');
+    void levelView.offsetWidth; // Force reflow
     levelView.classList.add('active');
 }
 
@@ -1131,8 +291,11 @@ function startExam(subject, levelIndex) {
     const appView = document.getElementById('app-view');
     const homeView = document.getElementById('home-view');
 
-    // Hide others
-    if (homeView) homeView.classList.add('hidden');
+    //decisive class toggling
+    if (homeView) {
+        homeView.classList.remove('active');
+        homeView.classList.add('hidden');
+    }
     if (levelView) {
         levelView.classList.remove('active');
         levelView.classList.add('hidden');
@@ -1141,8 +304,7 @@ function startExam(subject, levelIndex) {
     // Show App View
     if (appView) {
         appView.classList.remove('hidden');
-        // Force reflow
-        void appView.offsetWidth;
+        void appView.offsetWidth; // Force reflow
         appView.classList.add('active');
     }
 
@@ -1163,8 +325,11 @@ function goHome() {
     levelView.classList.add('hidden');
     appView.classList.remove('active');
     appView.classList.add('hidden');
+
     homeView.classList.remove('hidden');
+    void homeView.offsetWidth; // Force reflow
     homeView.classList.add('active');
+
     currentState.subject = null;
 }
 
@@ -1246,8 +411,8 @@ function renderGame(game) {
             if (panel) {
                 const img = document.getElementById('diagram-image');
                 if (img) {
-                    const currentLevelData = courseData[subject].levels[levelIndex];
-                    img.src = currentLevelData.schema_url || 'database_diagram.png';
+                    const levelData = courseData[currentState.subject].levels[currentState.levelIndex];
+                    img.src = levelData.schema_url || 'database_diagram.png';
                 }
                 panel.classList.remove('hidden');
             }
@@ -2284,50 +1449,57 @@ function setupFlowchartCanvas(exercise, container, onSuccess) {
 // 3. Quiz Diagram Logic
 function setupQuizDiagram(exercise, container, onSuccess) {
     let hasAnswered = false;
-    const diagramHTML = `
-        <div class="static-diagram">
-            <div class="node-oval">E</div>
-            <div class="arrow">⬇</div>
-            <div class="node-diamond"><span>>2</span></div>
-            <div class="path-split">
-                <div class="path-left">
-                    <div class="label-yes">Sí</div>
-                    <div class="arrow-horiz">⬅</div>
-                    <div class="arrow-vert">⬇ (+2)</div>
-                    <div class="node-diamond">° 3</div>
-                    <div class="path-split-inner">
-                        <div class="path-inner-left">
-                           <div class="label-no">No</div>
-                           <div class="arrow-horiz">⬅</div>
-                           <div class="arrow-vert">⬇ (-1)</div>
-                           <div class="node-diamond">° 2</div>
-                           <div class="path-return">
+
+    // Dynamic Diagram Support: Use URL from Supabase if available, else fallback to legacy HTML flowchart
+    let diagramHTML = "";
+    if (exercise.diagram_url) {
+        diagramHTML = `<img src="${exercise.diagram_url}" alt="Diagrama de la Pregunta" style="max-width:100%; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5);">`;
+    } else {
+        diagramHTML = `
+            <div class="static-diagram">
+                <div class="node-oval">E</div>
+                <div class="arrow">⬇</div>
+                <div class="node-diamond"><span>>2</span></div>
+                <div class="path-split">
+                    <div class="path-left">
+                        <div class="label-yes">Sí</div>
+                        <div class="arrow-horiz">⬅</div>
+                        <div class="arrow-vert">⬇ (+2)</div>
+                        <div class="node-diamond">° 3</div>
+                        <div class="path-split-inner">
+                            <div class="path-inner-left">
+                               <div class="label-no">No</div>
+                               <div class="arrow-horiz">⬅</div>
+                               <div class="arrow-vert">⬇ (-1)</div>
+                               <div class="node-diamond">° 2</div>
+                               <div class="path-return">
+                                    <div class="label-yes">Sí</div>
+                                    <div class="arrow-ret">⤴ (-1)</div>
+                               </div>
+                               <div class="path-inner-right">
+                                    <div class="label-no">No</div>
+                                    <div class="arrow-right">➡</div>
+                               </div>
+                            </div>
+                            <div class="path-inner-right">
                                 <div class="label-yes">Sí</div>
-                                <div class="arrow-ret">⤴ (-1)</div>
-                           </div>
-                           <div class="path-inner-right">
-                                <div class="label-no">No</div>
                                 <div class="arrow-right">➡</div>
-                           </div>
-                        </div>
-                        <div class="path-inner-right">
-                            <div class="label-yes">Sí</div>
-                            <div class="arrow-right">➡</div>
+                            </div>
                         </div>
                     </div>
+                    <div class="path-right">
+                        <div class="label-no">No</div>
+                        <div class="arrow-vert">⬇ (+1)</div>
+                        <div class="line-vert"></div>
+                    </div>
                 </div>
-                <div class="path-right">
-                    <div class="label-no">No</div>
-                    <div class="arrow-vert">⬇ (+1)</div>
-                    <div class="line-vert"></div>
-                </div>
+                <div class="merge-point"></div>
+                <div class="arrow">⬇ (+2)</div>
+                <div class="arrow">⬇ (+3)</div>
+                <div class="node-oval">S</div>
             </div>
-            <div class="merge-point"></div>
-            <div class="arrow">⬇ (+2)</div>
-            <div class="arrow">⬇ (+3)</div>
-            <div class="node-oval">S</div>
-        </div>
-    `;
+        `;
+    }
 
     container.innerHTML = `
         <div class="quiz-diagram-container" style="display:flex; justify-content:center; margin-bottom: 2rem;">
@@ -2712,25 +1884,20 @@ function setupSpeechPractice(game, container, onComplete) {
     }
 }
 
-// 6.5. Listening Practice Engine (New - TTS Based)
+// 6.5. Listening Practice Engine (Support for Cloudinary Audios)
 function setupListeningPractice(game, container, onComplete) {
-    const script = game.script || "Remote work offers flexibility, but the main drawback is the loss of company culture and spontaneous collaboration.";
-    const question = game.question || "According to the speaker, what is the main drawback of remote work?";
-    const options = game.options || [
-        "Reduced productivity",
-        "Lack of flexibility",
-        "Loss of company culture and spontaneous collaboration",
-        "Increased costs for the company"
-    ];
-    const correctIndex = game.correct || 2;
+    const script = game.script || "Escucha atentamente el audio.";
+    const question = game.question || "Responde la pregunta basada en el audio:";
+    const options = game.options || [];
+    const correctIndex = (game.correct !== undefined) ? game.correct : 0;
 
     let playsLeft = 2;
     let hasAnswered = false;
 
     container.innerHTML = `
         <div class="speech-container fade-in">
-            <h3 style="color:var(--secondary-color); margin-bottom:0.3rem; font-size:1.2rem;">${game.title || 'Practice: Simulated Listening'}</h3>
-            <p style="color:#aaa; font-size:0.9rem; margin-bottom:1rem;">Listen to the recording and answer the question. You can only listen twice.</p>
+            <h3 style="color:var(--secondary-color); margin-bottom:0.3rem; font-size:1.2rem;">${game.title || 'Comprensión Auditiva'}</h3>
+            <p style="color:#aaa; font-size:0.9rem; margin-bottom:1rem;">Escucha la grabación y responde. (Máximo 2 veces)</p>
 
             <div style="margin: 1.5rem 0;">
                 <div class="mic-wrapper" style="margin:0 auto;">
@@ -2749,7 +1916,7 @@ function setupListeningPractice(game, container, onComplete) {
             </div>
 
             <p style="font-size:1.1rem; margin:1rem 0; color:var(--text-secondary);">
-                🔊 Plays left: <span id="plays-counter" style="color:var(--accent-color); font-weight:bold; font-size:1.2rem;">${playsLeft}</span>
+                🔊 Reproducciones restantes: <span id="plays-counter" style="color:var(--accent-color); font-weight:bold; font-size:1.2rem;">${playsLeft}</span>
             </p>
 
             <div style="margin-top:1.5rem; width:100%; max-width:700px; margin-left:auto; margin-right:auto;">
@@ -2773,41 +1940,55 @@ function setupListeningPractice(game, container, onComplete) {
     const feedback = document.getElementById('listening-feedback');
     const optionButtons = container.querySelectorAll('.listening-option');
 
-    // Text-to-Speech Setup
-    const synth = window.speechSynthesis;
+    // Audio Playback logic
+    let audioObj = null;
+    if (game.audio_url) {
+        audioObj = new Audio(game.audio_url);
+    }
 
     btnPlay.onclick = () => {
-        if (playsLeft <= 0) {
-            feedback.textContent = "No more plays available.";
-            feedback.className = "feedback-msg incorrect";
-            return;
-        }
+        if (playsLeft <= 0) return;
 
-        if (synth.speaking) return; // Already playing
+        if (audioObj) {
+            if (!audioObj.paused) return;
 
-        const utterance = new SpeechSynthesisUtterance(script);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.9;
-
-        utterance.onstart = () => {
+            audioObj.play();
             btnPlay.classList.add('recording');
             visualizer.classList.add('active');
-        };
 
-        utterance.onend = () => {
-            btnPlay.classList.remove('recording');
-            visualizer.classList.remove('active');
-            playsLeft--;
-            playsCounter.textContent = playsLeft;
+            audioObj.onended = () => {
+                btnPlay.classList.remove('recording');
+                visualizer.classList.remove('active');
+                playsLeft--;
+                playsCounter.textContent = playsLeft;
+                if (playsLeft === 0) {
+                    btnPlay.disabled = true;
+                    btnPlay.style.opacity = '0.5';
+                }
+            };
+        } else {
+            // Fallback to TTS
+            const synth = window.speechSynthesis;
+            if (synth.speaking) return;
 
-            if (playsLeft === 0) {
-                btnPlay.disabled = true;
-                btnPlay.style.opacity = '0.5';
-                btnPlay.style.cursor = 'not-allowed';
-            }
-        };
-
-        synth.speak(utterance);
+            const utterance = new SpeechSynthesisUtterance(script);
+            utterance.lang = 'en-US';
+            utterance.onstart = () => {
+                btnPlay.classList.add('recording');
+                visualizer.classList.add('active');
+            };
+            utterance.onend = () => {
+                btnPlay.classList.remove('recording');
+                visualizer.classList.remove('active');
+                playsLeft--;
+                playsCounter.textContent = playsLeft;
+                if (playsLeft === 0) {
+                    btnPlay.disabled = true;
+                    btnPlay.style.opacity = '0.5';
+                }
+            };
+            synth.speak(utterance);
+        }
     };
 
     optionButtons.forEach((btn, idx) => {
@@ -2819,14 +2000,14 @@ function setupListeningPractice(game, container, onComplete) {
 
             if (idx === correctIndex) {
                 btn.style.background = 'var(--success)';
-                feedback.textContent = "✓ Correct!";
+                feedback.textContent = "✓ Correcto!";
                 feedback.className = "feedback-msg correct";
 
                 setTimeout(() => onComplete('correct'), 1000);
             } else {
                 btn.style.background = 'var(--error)';
                 optionButtons[correctIndex].style.background = 'var(--success)';
-                feedback.textContent = "✗ Incorrect. The correct answer is highlighted.";
+                feedback.textContent = "✗ Incorrecto.";
                 feedback.className = "feedback-msg incorrect";
 
                 setTimeout(() => onComplete('incorrect'), 2000);
@@ -2914,10 +2095,27 @@ function setupBuilder(game, container, onComplete) {
         if (feedback) feedback.textContent = '';
     };
 
+    // Normalize Data: if game.exercises exists, wrap it for legacy code
+    if (!game.challenges && game.exercises) {
+        game.challenges = game.exercises;
+    }
+    // Handle single challenge wrapped in an object (from Supabase)
+    if (!game.challenges && game.correct_answer) {
+        game.challenges = [{
+            goal: game.title,
+            correct: game.correct_answer,
+            blocks: game.blocks || []
+        }];
+    }
+
     // Track internal results for the detailed log
     let challengeResults = [];
 
     window.checkQuery = () => {
+        if (!game.challenges || !game.challenges[currentChallengeIndex]) {
+            console.error("No challenge found at index", currentChallengeIndex);
+            return;
+        }
         const challenge = game.challenges[currentChallengeIndex];
         const userString = currentQuery.join(' ').trim();
         const feedback = document.getElementById('builder-feedback');
@@ -2966,6 +2164,22 @@ function setupBuilder(game, container, onComplete) {
 
 // 7. Pseudocode Builder (Drag & Drop Version)
 function setupPseudocodeBuilder(game, container, onComplete) {
+    // Data normalization for Supabase (if lines is missing but exercises exist)
+    if (!game.lines && game.exercises) {
+        const sub = game.exercises[0];
+        if (sub && sub.lines) {
+            game.lines = sub.lines;
+            game.instruction = sub.instruction || game.instruction;
+            game.title = sub.title || game.title;
+        }
+    }
+
+    if (!game.lines) {
+        console.error("No lines found for pseudocode builder", game);
+        container.innerHTML = `<div class="feedback-msg incorrect">Error: No se encontraron líneas de pseudocódigo.</div>`;
+        return;
+    }
+
     // 1. Define Solution & Palette
     const solutionKeywords = game.lines.map(line => {
         const firstWord = line.trim().split(' ')[0];
